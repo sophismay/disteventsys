@@ -1,3 +1,7 @@
+package de.tud.disteventsys.connection
+
+import de.tud.disteventsys.esper.EsperEngine
+
 /**
   * Created by ms on 17.11.16.
   */

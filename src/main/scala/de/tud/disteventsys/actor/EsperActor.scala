@@ -1,4 +1,7 @@
+package de.tud.disteventsys.actor
+
 import akka.actor.{Actor, ActorRef}
+import de.tud.disteventsys.esper.EsperEngine
 
 /**
   * Created by ms on 18.11.16.

@@ -1,34 +1,14 @@
+package de.tud.disteventsys
+
+import akka.actor.{ActorSystem, Props}
+import de.tud.disteventsys.actor.{BuyerActor, EsperActor}
+import de.tud.disteventsys.actor_classes.{Buy, Price}
+import de.tud.disteventsys.config.Config
+import de.tud.disteventsys.actor.EsperActor._
+
 /**
-  * Created by ms on 16.11.16.
+  * Created by ms on 23.11.16.
   */
-
-import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
-import EsperActor._
-import akka.actor.Actor.Receive
-
-import scala.beans.BeanProperty
-
-/*
-Parsing command line options
- */
-case class Config(option1: String)
-
-case class Price(@BeanProperty symbol: String, @BeanProperty price: Double)
-case class Buy(@BeanProperty symbol: String, @BeanProperty price: Double, @BeanProperty amount: Long)
-
-class BuyerActor extends Actor with ActorLogging {
-  override def receive: Receive = {
-
-    case EsperEvent(className, underlying) =>
-      println(s"CASE ESPEREVENT ${className}:")
-      underlying match {
-        case Buy(s, p, a) =>
-          println(s"Received Buy: ${s}, ${p}, ${a}")
-      }
-    case _ => println(s"Could not find a corresponding case class")
-  }
-}
-
 object DisEventSys extends App {
 
   val optionsParser = new scopt.OptionParser[Config]("diseventsys") {

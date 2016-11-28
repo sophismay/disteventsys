@@ -99,7 +99,14 @@ class QueryDSL {
   }
   
   def SELECT(fields: String = "*") = {
-    val parts = fields.split(",")
+    val parts = fields match {
+      case f: String =>
+        if(f.isEmpty)
+          Nil
+      case _         =>
+
+    }
+    //val parts = fields.split(",")
     self
   }
 

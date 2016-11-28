@@ -38,8 +38,6 @@ object QueryAST {
 
 }
 
-import QueryAST._
-
 sealed abstract class Tree[+A]{
   def isEmpty: Boolean
   def insert[A](data: A): BinaryTree[A]
@@ -84,9 +82,11 @@ object Tree{
 
 class QueryDSL {
   self =>
-  
-  private var eplString: String = _
+
   import Tree._
+  import QueryAST._
+
+  private var eplString: String = _
   private val tree = empty
 
   def treeSize[A](tree: Tree[A]): Int = {

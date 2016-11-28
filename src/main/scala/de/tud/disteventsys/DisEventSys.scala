@@ -5,7 +5,7 @@ import de.tud.disteventsys.actor.{BuyerActor, EsperActor}
 import de.tud.disteventsys.actor_classes.{Buy, Price}
 import de.tud.disteventsys.config.Config
 import de.tud.disteventsys.actor.EsperActor._
-
+import scala.collection.immutable.RedBlackTree
 /**
   * Created by ms on 23.11.16.
   */

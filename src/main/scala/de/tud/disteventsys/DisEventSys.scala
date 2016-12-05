@@ -5,6 +5,8 @@ import de.tud.disteventsys.actor.{BuyerActor, EsperActor}
 import de.tud.disteventsys.actor_classes.{Buy, Price}
 import de.tud.disteventsys.config.Config
 import de.tud.disteventsys.actor.EsperActor._
+import de.tud.disteventsys.dsl.QueryDSL
+
 import scala.collection.immutable.RedBlackTree
 /**
   * Created by ms on 23.11.16.
@@ -30,6 +32,10 @@ object DisEventSys extends App {
 
       case None => println("NONE")
     }*/
+
+    val dsl = QueryDSL()
+    dsl SELECT "*" SELECT "*" INSERT "buy"
+
     val orderSize = 1000
 
     val system = ActorSystem()

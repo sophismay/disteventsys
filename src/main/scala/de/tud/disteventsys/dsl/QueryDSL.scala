@@ -1,8 +1,7 @@
 package de.tud.disteventsys.dsl
 
-import sun.font.TrueTypeFont
+import scala.util.{Failure, Success, Try}
 
-import scala.collection.immutable.RedBlackTree.Tree
 
 /**
   * Created by ms on 21.11.16.
@@ -19,7 +18,9 @@ object QueryAST {
 
   // Operators such as select
   sealed abstract class Operator
-  case class Select(parent: ParentOperator, fields: List[String]) extends Operator
+  //case class Select(parent: ParentOperator, fields: List[String]) extends Operator
+  case class Select(fields: List[String])                   extends Operator
+  case class Insert(stream: String)                           extends Operator
   case class From(parent: Operator, clz: String)            extends Operator
   case class Where(parent: Operator, expr: Expr)            extends Operator
 
@@ -38,47 +39,6 @@ object QueryAST {
 
 }
 
-sealed abstract class Tree[+A]{
-  def isEmpty: Boolean
-  def insert[A](data: A): BinaryTree[A]
-  //def size: Int
-  //def isParent: Boolean
-  def entries: Iterable[A]
-}
-
-sealed abstract class BinaryTree[+A] extends Tree[A]{
-  //def insert[A]: BinaryTree[A]
-}
-
-case object EmptyTree extends BinaryTree[Nothing]{
-  override def isEmpty: Boolean = true
-  // TODO: check if first time adding(stream specific command on top)
-  def insert[A](data: A): BinaryTree[A] = NonEmptyTree(data, EmptyTree, EmptyTree)
-  //override def size: Int = 0
-  import scala.collection.immutable.Nil
-  override def entries: Iterable[Nil.type] = Nil
-}
-//Tuple2[Operator, Expr]
-case class NonEmptyTree[A](data: A, left: BinaryTree[A], right: BinaryTree[A]) extends BinaryTree[A]{
-  override def isEmpty: Boolean = false
-  // TODO: check if first time adding(stream specific command on top)
-  def insert[A](data: A): BinaryTree[A] = {
-    NonEmptyTree(data, EmptyTree, EmptyTree)
-  }
-  def entries: Iterable[A] = ???
-}
-
-object Tree{
-  def empty[A]: BinaryTree[A] = EmptyTree
-  def node[A](data: A, left: BinaryTree[A] = empty, right: BinaryTree[A] = empty): NonEmptyTree[A] = {
-    NonEmptyTree(data, left, right)
-  }
-}
-
-//class EsperActorDSL[T] extends Tree[A, B]() with QueryAST{
-//  type This = EsperActorDSL[T]
-//}
-
 
 class QueryDSL {
   self =>
@@ -87,9 +47,11 @@ class QueryDSL {
   import QueryAST._
 
   private var eplString: String = _
-  private val tree = empty
+  private val rootNode = empty
+  //private val rootNode = node("root")
+  private var currentNode: Tree[Any] = rootNode
 
-  def treeSize[A](tree: Tree[A]): Int = {
+  private def treeSize[A](tree: Tree[A]): Int = {
     tree match {
       case EmptyTree                        =>
         1
@@ -99,22 +61,30 @@ class QueryDSL {
   }
   
   def SELECT(fields: String = "*") = {
-    val parts = fields match {
-      case f: String =>
-        if(f.isEmpty)
-          Nil
-      case _         =>
+    val parts = fields.split(",")
+    // insert here
+    // insert stream command to left of rootnode if empty
+    //treeSize(rootNode)
+    /*if(treeSize(rootNode) == 1){
+      currentNode = currentNode.add(Select(parts.toList))
+      //currentNode = rootNode.insert(node(Select(parts.toList)))
+      //currentNode = insert(rootNode, node(Select(parts.toList)))
+      println(s"TREE IS size 1 : ${node(Select(parts.toList))}")
+      println(s"AFTER ADDING, what's returned: ${rootNode.add(Select(parts.toList))}")
+    }*/
 
-    }
-    //val parts = fields.split(",")
+    currentNode = currentNode.add(Select(parts.toList))
+    println(s"current TREE state : ${currentNode}")
     self
   }
 
   def INSERT(stream: String) = {
-
+    currentNode = currentNode.add(Insert(stream))
+    println(s"current TREE state : ${currentNode}")
+    self
   }
 }
 
 object QueryDSL{
-  def apply: QueryDSL = new QueryDSL()
+  def apply(): QueryDSL = new QueryDSL()
 }

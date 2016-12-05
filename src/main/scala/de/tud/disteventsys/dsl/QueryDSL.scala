@@ -20,9 +20,9 @@ object QueryAST {
   sealed abstract class Operator
   //case class Select(parent: ParentOperator, fields: List[String]) extends Operator
   case class Select(fields: List[String])                   extends Operator
-  case class Insert(stream: String)                           extends Operator
+  case class Insert(stream: String)                         extends Operator
   case class From(parent: Operator, clz: String)            extends Operator
-  case class Where(parent: Operator, expr: Expr)            extends Operator
+  case class Where(expr: Expr)                              extends Operator
 
   // Expressions/ Filters
   abstract sealed class Expr

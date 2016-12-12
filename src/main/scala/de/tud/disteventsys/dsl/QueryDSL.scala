@@ -21,14 +21,16 @@ object QueryAST {
   //case class Select(parent: ParentOperator, fields: List[String]) extends Operator
   case class Select(fields: List[String])                   extends Operator
   case class Insert(stream: String)                         extends Operator
-  case class From(parent: Operator, clz: String)            extends Operator
+  case class From(clz: String)                              extends Operator
+  //case class From(parent: Operator, clz: String)            extends Operator
   case class Where(expr: Expr)                              extends Operator
 
   // Expressions/ Filters
   abstract sealed class Expr
   case object NoExpr                     extends Expr
-  case class Literal(value: Any)         extends Expr
-  case class eq(left: Expr, right: Expr) extends Expr
+  //case class Literal(value: Any)         extends Expr
+  case class Literal(value: String)         extends Expr
+  case class Equal(left: Expr, right: Expr) extends Expr
 
   // References
   sealed abstract class Ref
@@ -36,11 +38,17 @@ object QueryAST {
   case class Value(value: Any)   extends Ref
 
   // smart constructors
-
+  def evaluateExpr(expr: Expr): String = {
+    expr match {
+      case NoExpr          => ""
+      case Literal(value)  => value
+      case Equal(l, r)     => s"${evaluateExpr(l)} = ${evaluateExpr(r)}"
+    }
+  }
 }
 
 
-class QueryDSL {
+class QueryDSL extends Parser[Tree[Any]]{
   self =>
 
   import Tree._
@@ -82,6 +90,28 @@ class QueryDSL {
     currentNode = currentNode.add(Insert(stream))
     println(s"current TREE state : ${currentNode}")
     self
+  }
+
+  def FROM(clz: String) = {
+    //TODO: ensure is preceded by Select
+    //TODO: would be nice to use filter or map: currentNode.lastNode.filter
+    def throwError = {
+      throw new IllegalArgumentException("From should be preceeded by Select")
+    }
+    val lastNode = currentNode.lastNode
+    println(s"LASTNODE: $lastNode")
+    lastNode match {
+      case EmptyTree => throwError
+      case NonEmptyTree(d, l, r) => if(d.isInstanceOf[Select]) currentNode = currentNode.add(From(clz)) else throwError
+    }
+    self
+  }
+
+  def createEpl = {
+    //val p = new Parser[Tree[T]] {}
+    val parsed = parse(currentNode)
+    eplString = parsed.mkString
+    println(s"EPPL STRING: ${eplString}")
   }
 }
 

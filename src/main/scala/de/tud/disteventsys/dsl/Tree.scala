@@ -8,6 +8,9 @@ sealed abstract class Tree[+T] {
   def size: Int
   def add[A >: T](data: A): Tree[A]
   def toList: List[Tree[T]]
+  def lastNode: Tree[T]
+  def map
+  def flatMap
 }
 
 case object EmptyTree extends Tree[Nothing]{
@@ -15,6 +18,9 @@ case object EmptyTree extends Tree[Nothing]{
   def size = 0
   def add[A](data: A) = NonEmptyTree(data, EmptyTree, EmptyTree)
   def toList = Nil
+  def lastNode = this
+  def map = ???
+  def flatMap = ???
 }
 
 case class NonEmptyTree[+T](data: T, left: Tree[T], right: Tree[T]) extends Tree[T]{
@@ -29,6 +35,18 @@ case class NonEmptyTree[+T](data: T, left: Tree[T], right: Tree[T]) extends Tree
     List(NonEmptyTree(data, left, right)) ++ right.toList
   }
 
+  def lastNode = {
+    //TODO: would be nice to use flatMap here
+    println(s"lastnode: inside NonEmpty tree $data $right $this")
+    right match {
+      case EmptyTree              => this
+      case NonEmptyTree(d, l, r)  => if(!r.isEmpty) r.lastNode else right
+    }
+  }
+
+  def map = ???
+  def flatMap = ???
+
 }
 
 object Tree{
@@ -37,12 +55,12 @@ object Tree{
     NonEmptyTree(data, left, right)
   }
 
-  def toList[T](tree: Tree[T]): List[Tree[T]] = {
+  /*def toList[T](tree: Tree[T]): List[Tree[T]] = {
     tree match {
       case EmptyTree =>
         Nil
       case NonEmptyTree(d, l , r) =>
         List(NonEmptyTree(d, l, r)) ++ toList(r)
     }
-  }
+  }*/
 }

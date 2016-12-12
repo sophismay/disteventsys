@@ -3,58 +3,81 @@ package de.tud.disteventsys.dsl
 /**
   * Created by ms on 03.12.16.
   */
-import de.tud.disteventsys.dsl.QueryAST.Operator
+import de.tud.disteventsys.dsl.QueryAST._
 import fastparse.all._
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 import scala.util.parsing.combinator._
-
-trait Parser[+T] {
-  import Grammar._
-
-  def parse[A >: T](tree: Tree[A]) = Grammar.parseAll(tree)
-}
 
 trait ClauseHelper {
   def join(default: String, fields: List[String]): String = {
     fields match {
       case Nil          => default
-      case head :: tail => s"${head}, ${join(default, tail)}"
+      case head :: tail => if(tail.isEmpty) s"$head" else  s"$head, ${join(default, tail)}"
     }
   }
 }
 
-trait Clause extends JavaTokenParsers with ClauseHelper{
+trait Clause extends JavaTokenParsers with ClauseHelper {
   /* parent clause is the first command to execute to esper engine when the
      corresponding query is fired or matched.
      eg. insert into Buy <---- parent clause
          select * from ...
    */
-  import QueryAST._
 
-  def parentClause
-
-  def selectClause(fields: List[String]): Parser[Operator => Operator] = {
-    val fieldsString = join("*", fields)
-    "select" ~> fieldsString
-  }
-
-  def whereClause(expr: Expr): Parser[Operator => Operator] = {
-    expr match {
-      
+  def parentClause(op: Operator): String = {
+    op match {
+      case Insert(stream) => insertClause(stream)
+      case _              => throw new NotImplementedError()
     }
   }
 
-  def fromClause
+  def selectClause(fields: List[String]): String = {
+    val fieldsString = join("*", fields)
+    s"select ${fieldsString}\n"
+  }
+
+  def insertClause(clz: String): String = {
+    s"insert into ${clz}\n"
+  }
+
+  def whereClause(expr: Expr): String = {
+    val clause = evaluateExpr(expr)
+    s"where ${clause}\n"
+  }
+
+  def fromClause(clz: String): String = {
+    s"from ${clz}\n"
+  }
 }
 
-object Grammar extends Clause{
+trait Parser[+T] {
 
-  def statement =
+  def parse[A >: T](tree: Tree[A]) = Grammar.parseAll(tree)
 
-  def parseAll[A](tree: Tree[A]) = {
-    tree.toList foreach {
-      t =>
+  object Grammar extends Clause{
 
+    private var eplString = new StringBuilder()
+
+    private def statement[A](tree: Tree[A]) = {
+      tree match {
+        case NonEmptyTree(d, _, _) =>
+          d match {
+            case Insert(stream) => insertClause(stream)
+            case Select(fields) => selectClause(fields)
+            case From(clz)      => fromClause(clz)
+            case _              => "" //throw new NotImplementedException()
+          }
+        case _                     => throw new NotImplementedException()
+      }
+    }
+
+    def parseAll[A](tree: Tree[A]) = {
+      tree.toList foreach {
+        t =>
+          eplString = new StringBuilder(eplString + statement(t))
+      }
+      eplString
     }
   }
 }

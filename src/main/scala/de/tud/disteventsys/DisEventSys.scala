@@ -34,7 +34,9 @@ object DisEventSys extends App {
     }*/
 
     val dsl = QueryDSL()
-    dsl SELECT "*" SELECT "*" INSERT "buy"
+    val currentDsl = dsl INSERT  "buy" SELECT "a,b" FROM "price"
+    //val currentDsl = dsl INSERT  "buy" FROM "price"
+    currentDsl.createEpl
 
     val orderSize = 1000
 

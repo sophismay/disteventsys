@@ -34,33 +34,10 @@ object DisEventSys extends App {
     }*/
 
     val dsl = QueryDSL()
+    // TODO: implicit reference to dsl
     val currentDsl = dsl INSERT  "buy" SELECT "a,b" FROM "price"
     //val currentDsl = dsl INSERT  "buy" FROM "price"
     currentDsl.createEpl
-
-    val orderSize = 1000
-
-    val system = ActorSystem()
-    val esperActor = system.actorOf(Props(classOf[EsperActor]))
-    val buyer = system.actorOf(Props(classOf[BuyerActor]))
-
-    val statement =
-      s"""
-        insert into Buy
-        select p.symbol, p.price, $orderSize
-        from Price.std:unique(symbol) p
-        """
-
-    esperActor ! RegisterEventType("Price", classOf[Price])
-    esperActor ! RegisterEventType("Buy", classOf[Buy])
-    esperActor ! DeployStatement(statement, Some(buyer))
-    esperActor ! StartProcessing
-
-    val prices = Array(
-      Price("BP", 7.61), Price("RDSA", 2101.00), Price("RDSA", 2209.00),
-      Price("BP",7.66), Price("BP", 7.64), Price("BP", 7.67)
-    )
-
-    prices foreach (esperActor ! _)
+    
   }
 }

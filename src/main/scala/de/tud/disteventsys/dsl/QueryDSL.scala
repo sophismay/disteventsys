@@ -1,5 +1,7 @@
 package de.tud.disteventsys.dsl
 
+import de.tud.disteventsys.actor.ActorCreator
+
 import scala.util.{Failure, Success, Try}
 
 
@@ -48,7 +50,7 @@ object QueryAST {
 }
 
 
-class QueryDSL extends Parser[Tree[Any]]{
+class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
   self =>
 
   import Tree._
@@ -72,14 +74,6 @@ class QueryDSL extends Parser[Tree[Any]]{
     val parts = fields.split(",")
     // insert here
     // insert stream command to left of rootnode if empty
-    //treeSize(rootNode)
-    /*if(treeSize(rootNode) == 1){
-      currentNode = currentNode.add(Select(parts.toList))
-      //currentNode = rootNode.insert(node(Select(parts.toList)))
-      //currentNode = insert(rootNode, node(Select(parts.toList)))
-      println(s"TREE IS size 1 : ${node(Select(parts.toList))}")
-      println(s"AFTER ADDING, what's returned: ${rootNode.add(Select(parts.toList))}")
-    }*/
 
     currentNode = currentNode.add(Select(parts.toList))
     println(s"current TREE state : ${currentNode}")
@@ -108,9 +102,9 @@ class QueryDSL extends Parser[Tree[Any]]{
   }
 
   def createEpl = {
-    //val p = new Parser[Tree[T]] {}
     val parsed = parse(currentNode)
     eplString = parsed.mkString
+    process(eplString)
     println(s"EPPL STRING: ${eplString}")
   }
 }

@@ -29,6 +29,7 @@ trait ActorCreator {
         """
 
     //TODO: infer classes from statement
+    // TODO: make statement a trait so that one can not only infer the eplString but also the classes, etc
     esperActor ! RegisterEventType("Price", classOf[Price])
     esperActor ! RegisterEventType("Buy", classOf[Buy])
     esperActor ! DeployStatement(statement, Some(buyer))

@@ -101,11 +101,15 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
     self
   }
 
-  def createEpl = {
+  def createStream = {
+    createEpl
+  }
+
+  private def createEpl = {
     val parsed = parse(currentNode)
     eplString = parsed.mkString
     process(eplString)
-    println(s"EPPL STRING: ${eplString}")
+    println(s"EPL STRING: ${eplString}")
   }
 }
 

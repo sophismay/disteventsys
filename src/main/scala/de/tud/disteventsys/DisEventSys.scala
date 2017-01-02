@@ -6,6 +6,7 @@ import de.tud.disteventsys.actor_classes.{Buy, Price}
 import de.tud.disteventsys.config.Config
 import de.tud.disteventsys.actor.EsperActor._
 import de.tud.disteventsys.dsl.QueryDSL
+import de.tud.disteventsys.actor_classes.{ BuyGenerator, PriceGenerator, FieldsGenerator }
 
 import scala.collection.immutable.RedBlackTree
 /**
@@ -13,7 +14,7 @@ import scala.collection.immutable.RedBlackTree
   */
 object DisEventSys extends App {
 
-  val optionsParser = new scopt.OptionParser[Config]("diseventsys") {
+  lazy val optionsParser = new scopt.OptionParser[Config]("diseventsys") {
     head("diseventsys", "1.0")
 
     opt[String]('o', "option1").action((x, c) =>
@@ -35,8 +36,11 @@ object DisEventSys extends App {
 
     val dsl = QueryDSL()
     // TODO: implicit reference to dsl
-    val currentDsl = dsl INSERT  "buy" SELECT "a,b" FROM "price"
-    //val currentDsl = dsl INSERT  "buy" FROM "price"
+    val buyClass = BuyGenerator.getClassName
+    val priceClass = PriceGenerator.getClassName
+    val fields = FieldsGenerator("a, b").getFields
+
+    val currentDsl = dsl INSERT  buyClass SELECT fields FROM priceClass
     currentDsl.createEpl
     
   }

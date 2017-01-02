@@ -70,12 +70,12 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
     }
   }
   
-  def SELECT(fields: String = "*") = {
-    val parts = fields.split(",")
+  def SELECT(fields: List[String] = List("*")) = {
+    //val parts = fields.split(",")
     // insert here
     // insert stream command to left of rootnode if empty
 
-    currentNode = currentNode.add(Select(parts.toList))
+    currentNode = currentNode.add(Select(fields))
     println(s"current TREE state : ${currentNode}")
     self
   }

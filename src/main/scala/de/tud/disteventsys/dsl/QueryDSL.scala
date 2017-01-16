@@ -2,7 +2,7 @@ package de.tud.disteventsys.dsl
 
 import de.tud.disteventsys.actor.ActorCreator
 
-import scala.util.{Failure, Success, Try}
+import scala.util.{ Failure, Success, Try }
 
 
 /**

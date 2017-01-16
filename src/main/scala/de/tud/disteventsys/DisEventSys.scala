@@ -36,11 +36,15 @@ object DisEventSys extends App {
 
     val dsl = QueryDSL()
     // TODO: implicit reference to dsl
-    val buyClass = BuyGenerator.getClassName
-    val priceClass = PriceGenerator.getClassName
-    val fields = FieldsGenerator("a, b").getFields
+    //val buyClass = BuyGenerator.getClassName
+    //val priceClass = PriceGenerator.getClassName
+    //val fields = FieldsGenerator("a, b").getFields
 
-    val currentDsl = dsl INSERT buyClass SELECT fields FROM priceClass
+    val buy = BuyGenerator()
+    val price = PriceGenerator()
+    val fields = FieldsGenerator("a, b")
+
+    val currentDsl = dsl INSERT buy SELECT fields FROM price
     val stream1 = currentDsl.createStream
     println(s"STREAM 1: ${stream1}")
     

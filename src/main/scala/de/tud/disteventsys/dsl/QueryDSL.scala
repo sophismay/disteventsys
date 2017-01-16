@@ -1,6 +1,7 @@
 package de.tud.disteventsys.dsl
 
 import de.tud.disteventsys.actor.ActorCreator
+import de.tud.disteventsys.actor_classes._
 import de.tud.disteventsys.esper.EsperStream
 
 import scala.util.{Failure, Success, Try}
@@ -71,34 +72,77 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
     }
   }
   
-  def SELECT(fields: List[String] = List("*")) = {
+  def SELECT[T](gen: Generator[T]) = {
     //val parts = fields.split(",")
     // insert here
     // insert stream command to left of rootnode if empty
+    // fields: List[String] = List("*")
+    gen match {
+      case FieldsGenerator(fields)  =>
+        addToNode(Select(fields.split(",").map{ f => f.trim }.toList))
+      case _                        =>
+        throwArgumentError
+    }
 
-    currentNode = currentNode.add(Select(fields))
-    println(s"current TREE state : ${currentNode}")
+    /*currentNode = currentNode.add(Select(fields))
+    println(s"current TREE state : ${currentNode}")*/
+
     self
   }
 
-  def INSERT(stream: String) = {
-    currentNode = currentNode.add(Insert(stream))
-    println(s"current TREE state : ${currentNode}")
+  def INSERT[T](stream: Generator[T]) = {
+    //TODO: would be nice to use map or flatmap
+
+    stream match {
+      case BuyGenerator(clz)         =>
+        currentNode = currentNode.add(Insert(clz))
+        println(s"current TREE state : ${currentNode}")
+      case PriceGenerator(clz)       =>
+        currentNode = currentNode.add(Insert(clz))
+        println(s"current TREE state : ${currentNode}")
+      case SellGenerator(clz)        =>
+        currentNode = currentNode.add(Insert(clz))
+        println(s"current TREE state : ${currentNode}")
+      case _                         =>
+        throw new IllegalArgumentException("You can't Insert into an existing stream")
+    }
+    //currentNode = currentNode.add(Insert(stream))
+
     self
   }
 
-  def FROM(clz: String) = {
+  private def addToNode(o: Operator) = {
+    currentNode = currentNode.add(o)
+  }
+
+  private def throwArgumentError = {
+    throw new IllegalArgumentException("From should be preceeded by Select")
+  }
+
+  def FROM[T](gen: Generator[T]) = {
     //TODO: ensure is preceded by Select
     //TODO: would be nice to use filter or map: currentNode.lastNode.filter
-    def throwError = {
-      throw new IllegalArgumentException("From should be preceeded by Select")
+
+    def checkLastNodeBeforeAdd(clz: String) = {
+      val lastNode = currentNode.lastNode
+      println(s"LASTNODE: $lastNode")
+      lastNode match {
+        case EmptyTree => throwArgumentError
+        case NonEmptyTree(d, l, r) => if(d.isInstanceOf[Select]) addToNode(From(clz)) else throwArgumentError
+      }
     }
-    val lastNode = currentNode.lastNode
-    println(s"LASTNODE: $lastNode")
-    lastNode match {
-      case EmptyTree => throwError
-      case NonEmptyTree(d, l, r) => if(d.isInstanceOf[Select]) currentNode = currentNode.add(From(clz)) else throwError
+
+    gen match {
+      case BuyGenerator(clz)    =>
+        checkLastNodeBeforeAdd(clz)
+      case PriceGenerator(clz)  =>
+        checkLastNodeBeforeAdd(clz)
+      case SellGenerator(clz)   =>
+        checkLastNodeBeforeAdd(clz)
+      case EsperStreamGenerator(es) =>
+        //TODO: actor dependency stuff
     }
+
     self
   }
 

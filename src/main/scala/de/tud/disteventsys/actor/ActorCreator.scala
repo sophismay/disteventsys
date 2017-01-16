@@ -36,6 +36,9 @@ trait ActorCreator {
     esperActor ! StartProcessing
 
     dummyData
+
+    //TODO: create seperate actor each time its called
+    esperActor
   }
 
   def dummyData = {

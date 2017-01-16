@@ -41,7 +41,8 @@ object DisEventSys extends App {
     val fields = FieldsGenerator("a, b").getFields
 
     val currentDsl = dsl INSERT buyClass SELECT fields FROM priceClass
-    currentDsl.createStream
+    val stream1 = currentDsl.createStream
+    println(s"STREAM 1: ${stream1}")
     
   }
 }

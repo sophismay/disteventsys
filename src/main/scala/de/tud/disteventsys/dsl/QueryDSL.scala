@@ -1,8 +1,9 @@
 package de.tud.disteventsys.dsl
 
 import de.tud.disteventsys.actor.ActorCreator
+import de.tud.disteventsys.esper.EsperStream
 
-import scala.util.{ Failure, Success, Try }
+import scala.util.{Failure, Success, Try}
 
 
 /**
@@ -108,8 +109,11 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
   private def createEpl = {
     val parsed = parse(currentNode)
     eplString = parsed.mkString
-    process(eplString)
+    val actor = process(eplString)
     println(s"EPL STRING: ${eplString}")
+
+    // return Esper Stream representation
+    EsperStream(actor, eplString, currentNode)
   }
 }
 

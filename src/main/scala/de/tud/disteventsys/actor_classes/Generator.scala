@@ -38,6 +38,6 @@ case class EsperStreamGenerator(es: EsperStream.type) extends Generator[EsperStr
 
 }
 
-object Generator {
+/*object Generator {
   def unapply[T](g: Generator[T]): Option[Generator[T]] = Some(g)
-}
+}*/

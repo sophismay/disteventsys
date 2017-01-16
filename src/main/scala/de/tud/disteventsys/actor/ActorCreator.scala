@@ -1,9 +1,10 @@
 package de.tud.disteventsys.actor
 
-import akka.actor.{ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import de.tud.disteventsys.actor.EsperActor.{DeployStatement, RegisterEventType, StartProcessing}
 import de.tud.disteventsys.actor.BuyerActor
 import de.tud.disteventsys.actor_classes.{Buy, Price}
+import de.tud.disteventsys.event.EsperEvent
 
 /**
   * Created by ms on 14.12.16.
@@ -13,12 +14,40 @@ import de.tud.disteventsys.actor_classes.{Buy, Price}
 // create other actors
 // register, deploy statement and start processing
 
+trait ActorSystemInitiator{
+  lazy val system = ActorSystem()
+  lazy val esperActor = system.actorOf(Props(classOf[EsperActor]))
+}
+
+class Creator extends Actor with ActorSystemInitiator{
+  //private lazy val actor =
+  private val actor = system.actorOf(Props(classOf[Creator]))
+
+  def receive: Receive = {
+
+    case EsperEvent(className, underlying) =>
+      println(s"CASE ESPEREVENT ${className}:")
+      underlying match {
+        case Buy(s, p, a) =>
+          println(s"Received Buy: ${s}, ${p}, ${a}")
+      }
+    case _ => println(s"Could not find a corresponding case class")
+  }
+
+  def getActor = {
+    actor
+  }
+}
+
 trait ActorCreator {
   //private var eplString: String = _
   private lazy val system = ActorSystem()
   private lazy val esperActor = system.actorOf(Props(classOf[EsperActor]))
   private lazy val buyer = system.actorOf(Props(classOf[BuyerActor]))
-
+  private lazy val seller = system.actorOf(Props(classOf[SellerActor]))
+  private lazy val price = system.actorOf(Props(classOf[PriceActor]))
+  //private lazy val creator =
+  //val buyer = creator.getActor
   def process(eplStatement: String) = {
     val orderSize = 1000
     val statement =
@@ -30,6 +59,7 @@ trait ActorCreator {
 
     //TODO: infer classes from statement
     // TODO: make statement a trait so that one can not only infer the eplString but also the classes, etc
+    //TODO: infer actor(eg. buyer from statement)
     esperActor ! RegisterEventType("Price", classOf[Price])
     esperActor ! RegisterEventType("Buy", classOf[Buy])
     esperActor ! DeployStatement(statement, Some(buyer))
@@ -37,7 +67,7 @@ trait ActorCreator {
 
     dummyData
 
-    //TODO: create seperate actor each time its called
+    //TODO: create separate actor each time its called
     esperActor
   }
 

@@ -62,13 +62,14 @@ trait ActorCreator {
     //TODO: infer actor(eg. buyer) from statement
     esperActor ! RegisterEventType("Price", classOf[Price])
     esperActor ! RegisterEventType("Buy", classOf[Buy])
+    // could deploy statements on multiple actors, then return actors, not esperActor
     esperActor ! DeployStatement(statement, Some(buyer))
     esperActor ! StartProcessing
 
     dummyData
 
     //TODO: create separate actor each time its called
-    esperActor
+    Some(buyer)
   }
 
   def dummyData = {

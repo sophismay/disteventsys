@@ -153,12 +153,12 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
   private def createEpl = {
     val parsed = parse(currentNode)
     eplString = parsed.mkString
-    val actor = process(eplString)
+    val optionActor = process(eplString)
     println(s"EPL STRING: ${eplString}")
     //println(s"EXPLODING EPLSTRING: ${eplString.split(' ').foreach(f=>println(s"$f : ah"))}")
 
     // return Esper Stream representation
-    EsperStream(actor, eplString, currentNode)
+    EsperStream(optionActor, parsed, currentNode)
   }
 }
 

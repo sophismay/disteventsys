@@ -4,7 +4,7 @@ package de.tud.disteventsys.esper
   * Created by ms on 02.01.17.
   */
 trait Statement {
-  var eplString: String
+  var eplString: String = ""
   var eplEvents: List[String] = List.empty
   // first event usually ...
   var firstEvent: String = ""

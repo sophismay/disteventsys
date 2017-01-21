@@ -2,9 +2,11 @@ package de.tud.disteventsys.dsl
 
 import de.tud.disteventsys.actor.ActorCreator
 import de.tud.disteventsys.actor_classes._
+import de.tud.disteventsys.dsl.QueryAST.{From, Select}
 import de.tud.disteventsys.esper.EsperStream
 
 import scala.util.{Failure, Success, Try}
+import de.tud.disteventsys.actor_classes._
 
 
 /**
@@ -26,6 +28,7 @@ object QueryAST {
   case class Select(fields: List[String])                   extends Operator
   case class Insert(stream: String)                         extends Operator
   case class From(clz: String)                              extends Operator
+  case class FromStream[A](es: EsperStream[A])              extends Operator
   //case class From(parent: Operator, clz: String)            extends Operator
   case class Where(expr: Expr)                              extends Operator
 
@@ -54,6 +57,39 @@ object QueryAST {
 
 class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
   self =>
+
+  abstract class HandleParam[A]{
+    def handle(gen: A): Unit
+    def checkLastNodeBeforeAdd(clz: String) = {
+      val lastNode = currentNode.lastNode
+      println(s"LASTNODE: $lastNode")
+      lastNode match {
+        case EmptyTree => throwArgumentError
+        case NonEmptyTree(d, l, r) => if(d.isInstanceOf[Select]) addToNode(From(clz)) else throwArgumentError
+      }
+    }
+  }
+
+  implicit object GeneratorHandleParam extends HandleParam[Generator[String]]{
+    def handle(gen: Generator[String]): Unit = {
+      gen match {
+        case BuyGenerator(clz)    =>
+          checkLastNodeBeforeAdd(clz)
+        case PriceGenerator(clz)  =>
+          checkLastNodeBeforeAdd(clz)
+        case SellGenerator(clz)   =>
+          checkLastNodeBeforeAdd(clz)
+        //case EsperStreamGenerator(es) =>
+        //TODO: actor dependency stuff
+      }
+    }
+  }
+
+  implicit object StreamHandleParam extends HandleParam[EsperStream.type]{
+    def handle(stream: EsperStream.type) = {
+
+    }
+  }
 
   import Tree._
   import QueryAST._
@@ -119,10 +155,12 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
     throw new IllegalArgumentException("From should be preceeded by Select")
   }
 
-  def FROM[T](gen: Generator[T]) = {
+  //def FROM[T](gen: Generator[T])(implicit hp: HandleParam[Generator[T]]) = {
+  def FROM[T](gen: Any) = {
     //TODO: ensure is preceded by Select
     //TODO: would be nice to use filter or map: currentNode.lastNode.filter
 
+    //hp.handle(gen)
     def checkLastNodeBeforeAdd(clz: String) = {
       val lastNode = currentNode.lastNode
       println(s"LASTNODE: $lastNode")
@@ -132,19 +170,46 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
       }
     }
 
-    gen match {
-      case BuyGenerator(clz)    =>
-        checkLastNodeBeforeAdd(clz)
-      case PriceGenerator(clz)  =>
-        checkLastNodeBeforeAdd(clz)
-      case SellGenerator(clz)   =>
-        checkLastNodeBeforeAdd(clz)
-      case EsperStreamGenerator(es) =>
-        //TODO: actor dependency stuff
+    def checkLastNodeBeforeAddToStream[A](stream: EsperStream[A]) = {
+      val lastNode = currentNode.lastNode
+      lastNode match {
+        case EmptyTree => throwArgumentError
+        case NonEmptyTree(d, l, r) => if(d.isInstanceOf[Select]) addToNode(FromStream(stream)) else throwArgumentError
+      }
     }
+    /*println(s"GEN IS INSTANCE OF ESPERSTREAM: ${gen.isInstanceOf[EsperStream[Operator]]}")
+    println(s"GEN IS INSTANCE OF ESPERSTREAM TYPE:  ${gen.isInstanceOf[EsperStream.type]}")
+    println(s"GEN IS INSTANCE OF GENERATOR: ${gen.isInstanceOf[Generator[String]]}")*/
+
+    if(gen.isInstanceOf[Generator[String]]){
+      println(s"IS INSTANCE OF: $gen")
+      gen match {
+        case BuyGenerator(clz)    =>
+          checkLastNodeBeforeAdd(clz)
+        case PriceGenerator(clz)  =>
+          checkLastNodeBeforeAdd(clz)
+        case SellGenerator(clz)   =>
+          checkLastNodeBeforeAdd(clz)
+        case EsperStreamGenerator(es) =>
+        //TODO: actor dependency stuff
+      }
+    }
+    if(gen.isInstanceOf[EsperStream[Operator]]){
+      println(s"INSTANCE OF ESPERSTREAM: $gen")
+      gen match {
+        case EsperStream(actor, esb, node) =>
+          checkLastNodeBeforeAddToStream(EsperStream(actor, esb, node))
+      }
+    }
+
+
 
     self
   }
+
+  /*def FROM[A](stream: A)(implicit hp: HandleParam[A]) = {
+
+  }*/
 
   def createStream = {
     createEpl

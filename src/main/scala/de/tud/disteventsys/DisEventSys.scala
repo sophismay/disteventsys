@@ -2,11 +2,10 @@ package de.tud.disteventsys
 
 import akka.actor.{ActorSystem, Props}
 import de.tud.disteventsys.actor.{BuyerActor, EsperActor}
-import de.tud.disteventsys.actor_classes.{Buy, Price}
+import de.tud.disteventsys.actor_classes._
 import de.tud.disteventsys.config.Config
 import de.tud.disteventsys.actor.EsperActor._
 import de.tud.disteventsys.dsl.QueryDSL
-import de.tud.disteventsys.actor_classes.{ BuyGenerator, PriceGenerator, FieldsGenerator }
 
 import scala.collection.immutable.RedBlackTree
 /**
@@ -42,10 +41,14 @@ object DisEventSys extends App {
 
     val buy = BuyGenerator()
     val price = PriceGenerator()
+    val sell = SellGenerator()
     val fields = FieldsGenerator("a, b")
 
     val currentDsl = dsl INSERT buy SELECT fields FROM price
     val stream1 = currentDsl.createStream
+
+    // now create stream from existing stream
+    val stream2 =  dsl INSERT sell SELECT fields FROM stream1
     println(s"STREAM 1: ${stream1}")
     
   }

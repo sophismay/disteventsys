@@ -5,8 +5,8 @@ import de.tud.disteventsys.esper.EsperStream
 /**
   * Created by ms on 02.01.17.
   */
-trait Generator[T] {
-  self =>
+class Generator[T] {
+  //self =>
 
   //def getClassName: T
 }

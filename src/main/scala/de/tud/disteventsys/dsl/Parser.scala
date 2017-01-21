@@ -4,6 +4,7 @@ package de.tud.disteventsys.dsl
   * Created by ms on 03.12.16.
   */
 import de.tud.disteventsys.dsl.QueryAST._
+import de.tud.disteventsys.esper.EsperStream
 import fastparse.all._
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
@@ -49,6 +50,11 @@ trait Clause extends JavaTokenParsers with ClauseHelper {
   def fromClause(clz: String): String = {
     s"from ${clz}\n"
   }
+
+  def fromStreamClause[A](stream: EsperStream[A]) = {
+    // TODO; reference to stream?
+    s"from ${stream.getStreamReference}"
+  }
 }
 
 trait Parser[+T] {
@@ -66,6 +72,7 @@ trait Parser[+T] {
             case Insert(stream) => insertClause(stream)
             case Select(fields) => selectClause(fields)
             case From(clz)      => fromClause(clz)
+            case FromStream(stream) => fromStreamClause(stream)
             case _              => "" //throw new NotImplementedException()
           }
         case _                     => throw new NotImplementedException()

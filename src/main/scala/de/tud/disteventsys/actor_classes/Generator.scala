@@ -2,6 +2,8 @@ package de.tud.disteventsys.actor_classes
 
 import de.tud.disteventsys.esper.EsperStream
 
+import scala.util.Random
+
 /**
   * Created by ms on 02.01.17.
   */
@@ -18,6 +20,16 @@ class Generator[T] {
 case class BuyGenerator(clz: String = "Buy") extends Generator[String]
 case class PriceGenerator(clz: String = "Price") extends Generator[String]
 case class SellGenerator(clz: String="Sell") extends Generator[String]
+
+case object StreamReferenceGenerator extends Generator[String]{
+  var ref: String = ""
+  def generateReference = {
+    val rand = new Random()
+    ref += rand.nextLong()
+    println(s"STREAM REFERENCE: $ref")
+    ref
+  }
+}
 
 /*case object PriceGenerator extends Generator[String]{
   def getClassName = "Price"

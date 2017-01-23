@@ -1,7 +1,9 @@
 package de.tud.disteventsys.actor
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
+import akka.actor.{Actor, ActorRef, OneForOneStrategy, Props}
 import de.tud.disteventsys.esper.EsperEngine
+import scala.concurrent.duration._
 
 /**
   * Created by ms on 18.11.16.
@@ -30,6 +32,13 @@ class EsperActor extends Actor with EsperEngine{
   import EsperActor._
 
   private var createdActors: List[ActorRef] = List.empty
+
+  override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute){
+      case _: ArithmeticException       => Resume
+      case _: NullPointerException      => Restart
+      case _: IllegalArgumentException  => Stop
+      case _: Exception                 => Escalate
+    }
 
   def receive: Receive = {
     //

@@ -43,11 +43,6 @@ trait ActorCreator{
   //private var eplString: String = _
   private lazy val system = ActorSystem()
   private lazy val esperActor = system.actorOf(Props(classOf[EsperActor]))
-  //private lazy val buyer = system.actorOf(Props(classOf[BuyerActor]))
-  //private lazy val seller = system.actorOf(Props(classOf[SellerActor]))
-  //private lazy val price = system.actorOf(Props(classOf[PriceActor]))
-  //private lazy val creator =
-  //val buyer = creator.getActor
 
   def process(eplStatement: String) = {
     val orderSize = 1000

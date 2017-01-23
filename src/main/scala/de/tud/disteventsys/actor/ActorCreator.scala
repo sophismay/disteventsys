@@ -1,7 +1,7 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
-import de.tud.disteventsys.actor.EsperActor.{DeployStatement, RegisterEventType, StartProcessing}
+import de.tud.disteventsys.actor.EsperActor.{ CreateActor, DeployStatement, RegisterEventType, StartProcessing }
 import de.tud.disteventsys.actor.BuyerActor
 import de.tud.disteventsys.actor_classes.{Buy, Price}
 import de.tud.disteventsys.event.EsperEvent
@@ -39,15 +39,16 @@ class Creator extends Actor with ActorSystemInitiator{
   }
 }
 
-trait ActorCreator {
+trait ActorCreator{
   //private var eplString: String = _
   private lazy val system = ActorSystem()
   private lazy val esperActor = system.actorOf(Props(classOf[EsperActor]))
-  private lazy val buyer = system.actorOf(Props(classOf[BuyerActor]))
-  private lazy val seller = system.actorOf(Props(classOf[SellerActor]))
-  private lazy val price = system.actorOf(Props(classOf[PriceActor]))
+  //private lazy val buyer = system.actorOf(Props(classOf[BuyerActor]))
+  //private lazy val seller = system.actorOf(Props(classOf[SellerActor]))
+  //private lazy val price = system.actorOf(Props(classOf[PriceActor]))
   //private lazy val creator =
   //val buyer = creator.getActor
+
   def process(eplStatement: String) = {
     val orderSize = 1000
     println(s"STATEMTNE: $eplStatement")
@@ -63,14 +64,17 @@ trait ActorCreator {
     //TODO: infer actor(eg. buyer) from statement
     esperActor ! RegisterEventType("Price", classOf[Price])
     esperActor ! RegisterEventType("Buy", classOf[Buy])
+    esperActor ! CreateActor("Buy")
+    esperActor ! DeployStatement(eplStatement, "Buy")
     // could deploy statements on multiple actors, then return actors, not esperActor
-    esperActor ! DeployStatement(eplStatement, Some(buyer))
+    //esperActor ! DeployStatement(eplStatement, Some(buyer))
     esperActor ! StartProcessing
 
     dummyData
 
     //TODO: create separate actor each time its called
-    Some(buyer)
+    Some(esperActor)
+    //Some(buyer)
   }
 
   def dummyData = {

@@ -48,9 +48,9 @@ object DisEventSys extends App {
     val stream1 = currentDsl.createStream
 
     // now create stream from existing stream
-    val nextDsl =  dsl INSERT sell SELECT fields FROM stream1
-    val stream2 = nextDsl.createStream
-    println(s"STREAM 1: ${stream2}")
+    //val nextDsl =  dsl INSERT sell SELECT fields FROM stream1
+    //val stream2 = nextDsl.createStream
+    //println(s"STREAM 1: ${stream1}")
 
     // create stream from joining two streams
     

@@ -50,6 +50,7 @@ trait ActorCreator {
   //val buyer = creator.getActor
   def process(eplStatement: String) = {
     val orderSize = 1000
+    println(s"STATEMTNE: $eplStatement")
     val statement =
       s"""
         insert into Buy
@@ -63,7 +64,7 @@ trait ActorCreator {
     esperActor ! RegisterEventType("Price", classOf[Price])
     esperActor ! RegisterEventType("Buy", classOf[Buy])
     // could deploy statements on multiple actors, then return actors, not esperActor
-    esperActor ! DeployStatement(statement, Some(buyer))
+    esperActor ! DeployStatement(eplStatement, Some(buyer))
     esperActor ! StartProcessing
 
     dummyData

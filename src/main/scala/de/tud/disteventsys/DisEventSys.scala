@@ -42,7 +42,7 @@ object DisEventSys extends App {
     val buy = BuyGenerator()
     val price = PriceGenerator()
     val sell = SellGenerator()
-    val fields = FieldsGenerator("a, b")
+    val fields = FieldsGenerator("symbol, price, 100")
 
     val currentDsl = dsl INSERT buy SELECT fields FROM price
     val stream1 = currentDsl.createStream

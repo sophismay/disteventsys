@@ -39,7 +39,7 @@ trait Clause extends JavaTokenParsers with ClauseHelper {
   }
 
   def insertClause(clz: String): String = {
-    s"insert into ${clz}\n"
+    s"insert into ${clz.capitalize}\n"
   }
 
   def whereClause(expr: Expr): String = {
@@ -48,7 +48,7 @@ trait Clause extends JavaTokenParsers with ClauseHelper {
   }
 
   def fromClause(clz: String): String = {
-    s"from ${clz}\n"
+    s"from ${clz.capitalize}\n"
   }
 
   def fromStreamClause[A](stream: EsperStream[A]) = {

@@ -69,11 +69,11 @@ trait Parser[+T] {
       tree match {
         case NonEmptyTree(d, _, _) =>
           d match {
-            case Insert(stream) => insertClause(stream)
-            case Select(fields) => selectClause(fields)
-            case From(clz)      => fromClause(clz)
+            case Insert(stream)     => insertClause(stream)
+            case Select(fields)     => selectClause(fields)
+            case From(clz)          => fromClause(clz)
             case FromStream(stream) => fromStreamClause(stream)
-            case _              => "" //throw new NotImplementedException()
+            case _                  => "" //throw new NotImplementedException()
           }
         case _                     => throw new NotImplementedException()
       }

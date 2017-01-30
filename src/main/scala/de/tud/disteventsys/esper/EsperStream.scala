@@ -12,6 +12,6 @@ case class EsperStream[A](actor: Option[ActorRef], eplStringBuilder: StringBuild
   initStatement(eplStringBuilder)
   private val ref = StreamReferenceGenerator.generateReference
 
-  def getEplString: String = eplString
+  def getEplString: String = eplStatement
   def getStreamReference: String = ref
 }

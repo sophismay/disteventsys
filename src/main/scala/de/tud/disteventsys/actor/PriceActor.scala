@@ -9,11 +9,13 @@ import de.tud.disteventsys.event.Event._
 class PriceActor extends Actor with ActorLogging{
   override def receive: Receive = {
 
+    //TODO: Buy events get here but question is how come...
     case EsperEvent(className, underlying) =>
       println(s"CASE ESPEREVENT ${className}:")
       underlying match {
         case Price(s, p) =>
           println(s"Received Price Event: ${s}, ${p}")
+        case x: Any => println(s"Something ELSE: $x")
       }
     case _ => println(s"Could not find a corresponding case class")
   }

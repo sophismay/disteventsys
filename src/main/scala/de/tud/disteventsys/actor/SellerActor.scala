@@ -8,7 +8,7 @@ import de.tud.disteventsys.event.Event._
   * Created by ms on 16.01.17.
   */
 class SellerActor extends Actor with ActorLogging{
-  override def receive: Receive = {
+   def receive: Receive = {
 
     case EsperEvent(className, underlying) =>
       println(s"CASE ESPEREVENT ${className}:")

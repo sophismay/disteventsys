@@ -9,4 +9,5 @@ object Event {
   case class EsperEvent(eventType: String, underlying: AnyRef)
   case class Price(@BeanProperty symbol: String, @BeanProperty price: Double)
   case class Buy(@BeanProperty symbol: String, @BeanProperty price: Double, @BeanProperty amount: Long)
+  case class Sell(@BeanProperty symbol: String, @BeanProperty price: Double, @BeanProperty amount: Long)
 }

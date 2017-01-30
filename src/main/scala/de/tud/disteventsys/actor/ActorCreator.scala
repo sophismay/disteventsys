@@ -1,8 +1,9 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
-import de.tud.disteventsys.actor.EsperActor.{CreateActor, DeployStatement, RegisterEventType, StartProcessing}
+import de.tud.disteventsys.actor.EsperActor._
 import de.tud.disteventsys.actor.BuyerActor
+import de.tud.disteventsys.esper.Statement
 import de.tud.disteventsys.event.Event._
 
 /**
@@ -38,28 +39,38 @@ class Creator extends Actor with ActorSystemInitiator{
   }
 }
 
-trait ActorCreator{
+trait ActorCreator extends Statement{
   //private var eplString: String = _
   private lazy val system = ActorSystem()
   private lazy val esperActor = system.actorOf(Props(classOf[EsperActor]))
 
-  def process(eplStatement: String) = {
+  def process(eplStringBuilder: StringBuilder) = {
+    // initialize statement
+    initStatement(eplStringBuilder)
     val orderSize = 1000
-    println(s"STATEMTNE: $eplStatement")
-    val statement =
+    println(s"STATEMTNE: $eplStringBuilder")
+    val eplStatement = getEplStatement
+    /*val statement =
       s"""
         insert into Buy
         select p.symbol, p.price, $orderSize
         from Price.std:unique(symbol) p
-        """
+        """*/
 
     //TODO: infer classes from statement
+    // DONE
+    getAllEvents foreach {
+      case (clz, underlyingClass) =>
+        esperActor ! RegisterEventType(clz, underlyingClass)
+        esperActor ! CreateActor(clz)
+    }
+    esperActor ! DeployStatements(eplStatement)
     // TODO: make statement a trait so that one can not only infer the eplString but also the classes, etc
     //TODO: infer actor(eg. buyer) from statement
-    esperActor ! RegisterEventType("Price", classOf[Price])
-    esperActor ! RegisterEventType("Buy", classOf[Buy])
-    esperActor ! CreateActor("Buy")
-    esperActor ! DeployStatement(eplStatement, "buyer")
+    //esperActor ! RegisterEventType("Price", classOf[Price])
+    //esperActor ! RegisterEventType("Buy", classOf[Buy])
+    //esperActor ! CreateActor("Buy")
+    //esperActor ! DeployStatement(eplStatement, "buyer")
     // could deploy statements on multiple actors, then return actors, not esperActor
     //esperActor ! DeployStatement(eplStatement, Some(buyer))
     esperActor ! StartProcessing

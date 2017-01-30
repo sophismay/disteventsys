@@ -1,8 +1,9 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
-import akka.actor.{Actor, ActorRef, OneForOneStrategy, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props}
 import de.tud.disteventsys.esper.EsperEngine
+
 import scala.concurrent.duration._
 
 /**
@@ -24,11 +25,13 @@ object EsperActor{
 
   case class ReceiveCreatedActor(actor: ActorRef)
 
+  case class DeployStatements(eplStatement: String)
+
   //case class Deploy(eplStatement: String, name: String)
 }
 
 
-class EsperActor extends Actor with EsperEngine{
+class EsperActor extends Actor with ActorLogging with EsperEngine{
   import EsperActor._
 
   private var createdActors: List[ActorRef] = List.empty
@@ -84,9 +87,21 @@ class EsperActor extends Actor with EsperEngine{
       } yield actor}.head
       println(s"CASE DEPLOY: $actor")
       createEPL(eplStatement)(evt => actor ! evt)*/
+
+    case DeployStatements(eplStatement: String) =>
+      log.debug("CASE DEPLOY STATEMENT TO ALL INVOLVED ACTORS")
+      val handler = context.actorOf(NotifierActor.props(self, 1 second), "notifier")
+      //createdActors foreach { actor => createEPL(eplStatement)(evt => actor.tell(evt, handler))}
+      //createEPL(eplStatement)(evt => createdActors.head.tell(evt, handler))
+      //createEPL(eplStatement)(evt => createdActors(1).tell(evt, handler))
+      createEPL(eplStatement){
+        evt =>
+          createdActors map { actor =>
+            actor.tell(evt, handler) }
+      }
   }
 
-  private def dispatchingToEsper():Receive = {
+  private def dispatchingToEsper(): Receive = {
     case evt@_ => epRuntime.sendEvent(evt)
   }
 }

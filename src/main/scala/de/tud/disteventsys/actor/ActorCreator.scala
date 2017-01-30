@@ -1,10 +1,9 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
-import de.tud.disteventsys.actor.EsperActor.{ CreateActor, DeployStatement, RegisterEventType, StartProcessing }
+import de.tud.disteventsys.actor.EsperActor.{CreateActor, DeployStatement, RegisterEventType, StartProcessing}
 import de.tud.disteventsys.actor.BuyerActor
-import de.tud.disteventsys.actor_classes.{Buy, Price}
-import de.tud.disteventsys.event.EsperEvent
+import de.tud.disteventsys.event.{Buy, EsperEvent, Price}
 
 /**
   * Created by ms on 14.12.16.

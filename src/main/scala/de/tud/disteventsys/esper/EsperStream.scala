@@ -1,7 +1,7 @@
 package de.tud.disteventsys.esper
 
 import akka.actor.ActorRef
-import de.tud.disteventsys.actor_classes.StreamReferenceGenerator
+import de.tud.disteventsys.common.StreamReferenceGenerator
 import de.tud.disteventsys.dsl.Tree
 
 /**

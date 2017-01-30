@@ -7,6 +7,7 @@ import de.tud.disteventsys.esper.EsperStream
 
 import scala.util.{Failure, Success, Try}
 import de.tud.disteventsys.actor_classes._
+import de.tud.disteventsys.common.Generator
 
 
 /**

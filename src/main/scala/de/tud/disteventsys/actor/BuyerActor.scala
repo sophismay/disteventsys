@@ -1,8 +1,7 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging}
-import de.tud.disteventsys.actor_classes.Buy
-import de.tud.disteventsys.event.EsperEvent
+import de.tud.disteventsys.event.{Buy, EsperEvent}
 
 /**
   * Created by ms on 23.11.16.

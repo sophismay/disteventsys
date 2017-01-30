@@ -2,8 +2,7 @@ package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging}
 import akka.actor.Actor.Receive
-import de.tud.disteventsys.actor_classes.Buy
-import de.tud.disteventsys.event.EsperEvent
+import de.tud.disteventsys.event.{Buy, EsperEvent}
 
 /**
   * Created by ms on 16.01.17.

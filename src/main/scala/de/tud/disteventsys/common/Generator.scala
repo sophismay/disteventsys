@@ -1,4 +1,4 @@
-package de.tud.disteventsys.actor_classes
+package de.tud.disteventsys.common
 
 import de.tud.disteventsys.esper.EsperStream
 

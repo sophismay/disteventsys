@@ -55,13 +55,13 @@ class EsperActor extends Actor with EsperEngine{
     case CreateActor(clz)       =>
       clz match {
         case "Buy"  =>
-          val actor = context.actorOf(Props(classOf[BuyerActor]), "Buy")
+          val actor = context.actorOf(Props(classOf[BuyerActor]), "buyer")
           createdActors = createdActors :+ actor
           println(s"ACTOR CREATED: ${actor}")
         case "Sell" =>
-          createdActors = createdActors :+ context.actorOf(Props(classOf[SellerActor]), "Sell")
+          createdActors = createdActors :+ context.actorOf(Props(classOf[SellerActor]), "seller")
         case "Price" =>
-          createdActors = createdActors :+ context.actorOf(Props(classOf[PriceActor]), "Price")
+          createdActors = createdActors :+ context.actorOf(Props(classOf[PriceActor]), "price")
       }
     case DeployStatement(eplStatement, name) =>
       println(s"CASE DEPLOY: $name")

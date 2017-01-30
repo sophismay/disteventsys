@@ -60,7 +60,7 @@ trait ActorCreator{
     esperActor ! RegisterEventType("Price", classOf[Price])
     esperActor ! RegisterEventType("Buy", classOf[Buy])
     esperActor ! CreateActor("Buy")
-    esperActor ! DeployStatement(eplStatement, "Buy")
+    esperActor ! DeployStatement(eplStatement, "buyer")
     // could deploy statements on multiple actors, then return actors, not esperActor
     //esperActor ! DeployStatement(eplStatement, Some(buyer))
     esperActor ! StartProcessing

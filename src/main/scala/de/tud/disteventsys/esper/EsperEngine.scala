@@ -6,7 +6,7 @@ package de.tud.disteventsys.esper
 
 
 import com.espertech.esper.client._
-import de.tud.disteventsys.event.EsperEvent
+import de.tud.disteventsys.event.Event.EsperEvent
 
 import scala.util.{Failure, Success, Try}
 

@@ -2,7 +2,7 @@ package de.tud.disteventsys
 
 import akka.actor.{ActorSystem, Props}
 import de.tud.disteventsys.actor.{BuyerActor, EsperActor}
-import de.tud.disteventsys.actor_classes._
+import de.tud.disteventsys.event.Event._
 import de.tud.disteventsys.config.Config
 import de.tud.disteventsys.actor.EsperActor._
 import de.tud.disteventsys.common.{BuyGenerator, FieldsGenerator, PriceGenerator, SellGenerator}

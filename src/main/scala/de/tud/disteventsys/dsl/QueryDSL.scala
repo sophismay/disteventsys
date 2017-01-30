@@ -1,13 +1,10 @@
 package de.tud.disteventsys.dsl
 
 import de.tud.disteventsys.actor.ActorCreator
-import de.tud.disteventsys.actor_classes._
+import de.tud.disteventsys.event.Event._
 import de.tud.disteventsys.dsl.QueryAST.{From, Select}
 import de.tud.disteventsys.esper.EsperStream
-
-import scala.util.{Failure, Success, Try}
-import de.tud.disteventsys.actor_classes._
-import de.tud.disteventsys.common.Generator
+import de.tud.disteventsys.common._
 
 
 /**

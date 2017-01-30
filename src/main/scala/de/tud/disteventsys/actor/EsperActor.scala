@@ -65,12 +65,25 @@ class EsperActor extends Actor with EsperEngine{
       }
     case DeployStatement(eplStatement, name) =>
       println(s"CASE DEPLOY: $name")
-      val actor = {for {
+      val actors = for {
+        actor <- createdActors
+        if(actor.path.name == name)
+      } yield actor
+      // making EsperActor the sender
+      val handler = context.actorOf(NotifierActor.props(self, 1 second), "notifier")
+      // now match events and tell them something
+      val actor = actors.head
+      createEPL(eplStatement){
+        evt =>
+          actor.tell(evt, handler)
+      }
+
+      /*val actor = {for {
         actor <- createdActors
         if(actor.path.name == name)
       } yield actor}.head
       println(s"CASE DEPLOY: $actor")
-      createEPL(eplStatement)(evt => actor ! evt)
+      createEPL(eplStatement)(evt => actor ! evt)*/
   }
 
   private def dispatchingToEsper():Receive = {

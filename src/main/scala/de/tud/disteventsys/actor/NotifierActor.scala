@@ -13,17 +13,25 @@ import scala.concurrent.duration.{FiniteDuration, TimeUnit}
 object NotifierActor{
   case object RequestTimeout
 
-  def props(actors: List[Option[ActorRef]], originalSender: ActorRef, delay: FiniteDuration): Props = {
-    Props(new NotifierActor(actors, originalSender, delay))
+  def props(originalSender: ActorRef, delay: FiniteDuration): Props = {
+    Props(new NotifierActor(originalSender, delay))
   }
 }
 
-class NotifierActor(actors: List[Option[ActorRef]], originalSender: ActorRef, delay: FiniteDuration) extends Actor with ActorLogging{
+class NotifierActor(originalSender: ActorRef, delay: FiniteDuration) extends Actor with ActorLogging{
 
   import NotifierActor._
 
   def receive = LoggingReceive {
-    case RequestTimeout => log.info(s"TIMEOUT RECEIVED: ")
+    case RequestTimeout =>
+      log.debug(s"TIMEOUT RECEIVED: ")
+      sendResponseAndShutdown(RequestTimeout)
+  }
+
+  private def sendResponseAndShutdown(response: Any) = {
+    originalSender ! response
+    log.debug(s"Stopping context capturing actor")
+    context.stop(self)
   }
 
   import context.dispatcher

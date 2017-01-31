@@ -10,6 +10,7 @@ class PriceActor extends Actor with ActorLogging{
   override def receive: Receive = {
 
     //TODO: Buy events get here but question is how come...
+    //TODO: would be ideal if events go to respective actors
     case EsperEvent(className, underlying) =>
       println(s"CASE ESPEREVENT ${className}:")
       underlying match {

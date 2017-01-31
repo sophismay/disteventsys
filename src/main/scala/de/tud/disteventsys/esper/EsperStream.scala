@@ -8,10 +8,12 @@ import de.tud.disteventsys.dsl.Tree
   * Created by ms on 02.01.17.
   */
 // a general representation of the actor, and it's epl statement
-case class EsperStream[A](actor: Option[ActorRef], eplStringBuilder: StringBuilder, node: Tree[A]) extends Statement{
-  initStatement(eplStringBuilder)
+/*case class EsperStream[A](actor: Option[ActorRef], eplStringBuilder: StringBuilder, node: Tree[A]){
+  //initStatement(eplStringBuilder)
   private val ref = StreamReferenceGenerator.generateReference
 
-  def getEplString: String = eplStatement
+  //def getEplString: String = eplStatement
   def getStreamReference: String = ref
-}
+}*/
+
+case class EsperStream(stream: Stream)

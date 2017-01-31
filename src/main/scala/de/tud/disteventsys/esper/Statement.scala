@@ -5,7 +5,7 @@ import de.tud.disteventsys.event.Event.{Buy, Price, Sell}
 /**
   * Created by ms on 02.01.17.
   */
-trait Statement {
+class Statement {
   var eplStatement: String = ""
   var eplEvents: List[String] = List.empty
   // first event usually ...
@@ -17,7 +17,7 @@ trait Statement {
   )
   private val allEvents = List("Buy", "Sell", "Price")
   //TODO: infer Responsible event/class from StringBuilder
-  def initStatement(eplStringBuilder: StringBuilder) = {
+  def initEpl(eplStringBuilder: StringBuilder) = {
     // populate events from StringBuilder, in order
     eplStatement = eplStringBuilder.mkString
     eplEvents = eplStatement.split("\n").flatMap(p => p.split(" ")).filter(p => allEvents.contains(p)).toList

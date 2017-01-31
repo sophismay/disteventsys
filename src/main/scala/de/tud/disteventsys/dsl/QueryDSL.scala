@@ -53,7 +53,7 @@ object QueryAST {
 }
 
 
-class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
+class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
   self =>
 
   abstract class HandleParam[A]{
@@ -195,8 +195,9 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
     if(gen.isInstanceOf[EsperStream[Operator]]){
       println(s"INSTANCE OF ESPERSTREAM: $gen")
       gen match {
-        case EsperStream(actor, esb, node) =>
-          checkLastNodeBeforeAddToStream(EsperStream(actor, esb, node))
+        
+        /*case EsperStream(actor, esb, node) =>
+          checkLastNodeBeforeAddToStream(EsperStream(actor, esb, node))*/
       }
     }
 
@@ -216,12 +217,16 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator{
   private def createEpl = {
     val parsedStringBuilder = parse(currentNode)
     //eplString = parsed.mkString
-    val optionActor = process(parsedStringBuilder)
+    // TODO: change to future
+    val streamFuture = process(parsedStringBuilder)
+    for {
+      stream <- streamFuture
+    } yield EsperStream(stream)
     println(s"EPL STRING: ${eplString}")
     //println(s"EXPLODING EPLSTRING: ${eplString.split(' ').foreach(f=>println(s"$f : ah"))}")
 
     // return Esper Stream representation
-    EsperStream(optionActor, parsedStringBuilder, currentNode)
+    //EsperStream(optionActor, parsedStringBuilder, currentNode)
   }
 }
 

@@ -1,7 +1,7 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
-import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, ReceiveTimeout}
 import de.tud.disteventsys.esper.EsperEngine
 
 import scala.concurrent.duration._
@@ -33,6 +33,8 @@ object EsperActor{
 
 class EsperActor extends Actor with ActorLogging with EsperEngine{
   import EsperActor._
+  // service unavailable if nothing processed within 20 seconds
+  context.setReceiveTimeout(20 seconds)
 
   private var createdActors: List[ActorRef] = List.empty
 
@@ -44,6 +46,11 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
     }
 
   def receive: Receive = {
+
+    case ReceiveTimeout =>
+      // no progress within 20 seconds, shutting down
+      log.error("Shutting down due to unavailable service")
+      context.system.terminate()
     //
     case RegisterEventType(name, clz)   =>
       esperConfig.addEventType(name, clz.getName)

@@ -1,10 +1,12 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import scala.concurrent.Future
 import de.tud.disteventsys.actor.EsperActor._
 import de.tud.disteventsys.actor.BuyerActor
 import de.tud.disteventsys.esper.Statement
 import de.tud.disteventsys.event.Event._
+import de.tud.disteventsys.esper.Stream
 
 /**
   * Created by ms on 14.12.16.
@@ -39,17 +41,18 @@ class Creator extends Actor with ActorSystemInitiator{
   }
 }
 
-trait ActorCreator extends Statement{
+trait ActorCreator{
   //private var eplString: String = _
   private lazy val system = ActorSystem()
   private lazy val esperActor = system.actorOf(Props(classOf[EsperActor]))
 
-  def process(eplStringBuilder: StringBuilder) = {
+  def process(eplStringBuilder: StringBuilder): Future[Stream] = Future {
     // initialize statement
-    initStatement(eplStringBuilder)
+    val statement = new Statement()
+    statement.initEpl(eplStringBuilder)
     val orderSize = 1000
     println(s"STATEMTNE: $eplStringBuilder")
-    val eplStatement = getEplStatement
+    val eplStatement = statement.getEplStatement
     /*val statement =
       s"""
         insert into Buy
@@ -59,7 +62,7 @@ trait ActorCreator extends Statement{
 
     //TODO: infer classes from statement
     // DONE
-    getAllEvents foreach {
+    statement.getAllEvents foreach {
       case (clz, underlyingClass) =>
         esperActor ! RegisterEventType(clz, underlyingClass)
         esperActor ! CreateActor(clz)
@@ -80,6 +83,8 @@ trait ActorCreator extends Statement{
     //TODO: create separate actor each time its called
     Some(esperActor)
     //Some(buyer)
+    //TODO: return instead stream
+    Stream(statement)
   }
 
   def dummyData = {

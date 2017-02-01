@@ -5,7 +5,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, Rece
 import akka.event.LoggingReceive
 import com.espertech.esper.client.EPStatement
 import de.tud.disteventsys.esper.EsperEngine
-import de.tud.disteventsys.event.Event.{Buy, EsperEvent}
+import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
 
 import scala.concurrent.duration._
 import scala.util.Try
@@ -175,13 +175,30 @@ class Handler(originalSender: ActorRef, actors: Map[String, ActorRef], delay: Fi
 
   private final val eventsCount = 2
   private var resultsFired = Tuple2[Option[Any], Option[Any]] (Some(1), Some(2))
-
+  
   def receive = LoggingReceive {
     case EsperEvent(clz, underlying) =>
       println(s"ESPER EVENT IN HANDLEr: $clz $underlying")
       underlying match {
         case Buy(s, p, a) =>
-          actors.default("buyer") ! Buy(s, p, a)
+          actors.get("buyer") match {
+            case Some(act) =>
+              act ! Buy(s, p, a)
+            case _         => println("BUY NOT MATCHED IN HANDLER")
+          }
+        case Price(s, p) =>
+          actors.get("pricer") match {
+            case Some(act) =>
+              act ! Price(s, p)
+            case _         => println("PRICE NOT MATCHED IN HANDLER")
+          }
+        case Sell(s, p, a)  =>
+          actors.get("seller") match {
+            case Some(act) =>
+              act ! Sell(s, p, a)
+            case _         => println("SELL NOT MATCHED IN HANDLER")
+          }
+          //actors.default("buyer") ! Buy(s, p, a)
       }
     case HandlerResponse =>
       // add response to resultsFired, then collectResponse

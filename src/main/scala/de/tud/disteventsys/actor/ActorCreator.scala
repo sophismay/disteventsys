@@ -49,6 +49,14 @@ trait ActorCreator {
   //private var eplString: String = _
   private lazy val system = ActorSystem()
   private lazy val esperActor = system.actorOf(Props(classOf[EsperActor]))
+  private lazy val buyerActor = system.actorOf(Props(classOf[BuyerActor]), "buyer")
+  private lazy val priceActor = system.actorOf(Props(classOf[PriceActor]), "pricer")
+  private lazy val sellerActor = system.actorOf(Props(classOf[SellerActor]), "seller")
+  private val actors: Map[String, ActorRef] = Map(
+    buyerActor.path.name  -> buyerActor,
+    priceActor.path.name  -> priceActor,
+    sellerActor.path.name -> sellerActor
+  )
 
   def process[T](eplStringBuilder: StringBuilder, node: Tree[T]): Future[Stream[T]] = Future {
     // initialize statement
@@ -63,15 +71,18 @@ trait ActorCreator {
         select p.symbol, p.price, $orderSize
         from Price.std:unique(symbol) p
         """*/
+    println(s"NAMEOFACTOR ${buyerActor.path.name}")
+    esperActor ! InitializeActors(actors)
 
     //TODO: infer classes from statement
     // DONE
     statement.getAllEvents foreach {
       case (clz, underlyingClass) =>
         esperActor ! RegisterEventType(clz, underlyingClass)
-        esperActor ! CreateActor(clz)
+        //esperActor ! CreateActor(clz)
     }
-    esperActor ! DeployStatements(eplStatement)
+    //esperActor ! DeployStatements(eplStatement)
+    esperActor ! DeployStatementss(Array(eplStatement))
     // TODO: make statement a trait so that one can not only infer the eplString but also the classes, etc
     //TODO: infer actor(eg. buyer) from statement
     //esperActor ! RegisterEventType("Price", classOf[Price])
@@ -92,8 +103,15 @@ trait ActorCreator {
   }
 
   def processWithStreams(sb: StringBuilder, streams: Array[Stream[_]]) = {
+    val statement = new Statement()
+    statement.initEpl(sb)
     val stream = streams.head
+    val currentEplString = statement.getEplStatement
+    val oldStatement = stream.getStatement
+    val oldEplString = oldStatement.getEplStatement
+
     // unregister current esperActor Events and merge current eplString with that of String
+    // by creating anonymous actors to handle
     // next, include timeout
     esperActor ! UnregisterAllEvents
   }

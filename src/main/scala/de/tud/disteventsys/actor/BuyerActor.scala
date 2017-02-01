@@ -15,6 +15,8 @@ class BuyerActor extends Actor with ActorLogging {
         case Buy(s, p, a) =>
           println(s"Received Buy: ${s}, ${p}, ${a}")
       }
+    case Buy(s, p, a) =>
+      println(s"Received Buy: ${s}, ${p}, ${a}")
     case _ => println(s"Could not find a matching message")
   }
 }

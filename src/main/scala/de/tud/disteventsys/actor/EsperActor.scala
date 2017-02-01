@@ -2,8 +2,10 @@ package de.tud.disteventsys.actor
 
 import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
 import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, ReceiveTimeout}
+import akka.event.LoggingReceive
 import com.espertech.esper.client.EPStatement
 import de.tud.disteventsys.esper.EsperEngine
+import de.tud.disteventsys.event.Event.{Buy, EsperEvent}
 
 import scala.concurrent.duration._
 import scala.util.Try
@@ -19,6 +21,8 @@ object EsperActor{
   // register actor class with esper engine
   case class RegisterEventType(name: String, clz: Class[_ <: Any])
 
+  case class InitializeActors(actors: Map[String, ActorRef])
+
   // considering case without listener too
   //case class DeployStatement(epl: String, listener: Option[ActorRef])
   case class DeployStatement(eplStatement: String, name: String)
@@ -29,6 +33,8 @@ object EsperActor{
 
   case class DeployStatements(eplStatement: String)
 
+  case class DeployStatementss(statements: Array[String])
+
   case object UnregisterAllEvents
 
   //case class Deploy(eplStatement: String, name: String)
@@ -37,11 +43,15 @@ object EsperActor{
 
 class EsperActor extends Actor with ActorLogging with EsperEngine{
   import EsperActor._
+  import scala.util.Random
+  val rand = new Random()
   // service unavailable if nothing processed within 20 seconds
   context.setReceiveTimeout(20 seconds)
 
   private var createdActors: List[ActorRef] = List.empty
   private var currentEsperStatement: EPStatement = _
+  private var handlers: Array[ActorRef] = Array.empty
+  private var actors: Map[String, ActorRef] = Map.empty
 
   override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute){
       case _: ArithmeticException       => Resume
@@ -58,7 +68,18 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       context.system.terminate()
     //
     case RegisterEventType(name, clz)   =>
-      esperConfig.addEventType(name, clz.getName)
+      println(s"REGISTERING EVENT: ${clz.getName} $name")
+      println(s"EVENT TYPES ${esperConfig.getEventTypeNames.keySet()} ")
+
+      val eventTypes = esperConfig.getEventTypeNames.keySet()
+      if(!eventTypes.contains(name)){
+        println(s"EVENT NOT YET REGISTERED, now registering: $name")
+        esperConfig.addEventType(name, clz.getName)
+      }
+    //TODO: is this needed? just create in ActorCreator and leave as it is?
+    case InitializeActors(mActors: Map[String, ActorRef]) =>
+      actors = actors ++ mActors
+      println(s"ACTIRS: $actors")
 
     /*case DeployStatement(epl, listener) =>
       println(s"INSIDE DEPLOY STATEMENT: ${listener}")
@@ -67,7 +88,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
     case StartProcessing                =>
       context.become(dispatchingToEsper)
 
-    case CreateActor(clz)       =>
+    /*case CreateActor(clz)       =>
       clz match {
         case "Buy"  =>
           val actor = context.actorOf(Props(classOf[BuyerActor]), "buyer")
@@ -77,7 +98,19 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
           createdActors = createdActors :+ context.actorOf(Props(classOf[SellerActor]), "seller")
         case "Price" =>
           createdActors = createdActors :+ context.actorOf(Props(classOf[PriceActor]), "price")
+      }*/
+    case CreateActor =>
+
+    case DeployStatementss(statements: Array[String]) =>
+      //val handler = context.actorOf(Handler.props(self, 1 second), "handler")
+      statements foreach {
+        statement =>
+          val handler = context.actorOf(Handler.props(self, actors, 10 seconds), "handler" + rand.nextLong())
+          handlers = handlers :+ handler
+          createEPL(statement){evt => handler ! evt;println(s"HANDLER CREATED $handler for statement $statement with event $evt")}
+
       }
+
     case DeployStatement(eplStatement, name) =>
       println(s"CASE DEPLOY: $name")
       val actors = for {
@@ -85,7 +118,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
         if(actor.path.name == name)
       } yield actor
       // making EsperActor the sender
-      val handler = context.actorOf(NotifierActor.props(self, 1 second), "notifier")
+      val handler = context.actorOf(NotifierActor.props(self, 10 second), "notifier")
       // now match events and tell them something
       val actor = actors.head
       val esperStatement: Try[EPStatement] = createEPL(eplStatement){
@@ -101,8 +134,8 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       createEPL(eplStatement)(evt => actor ! evt)*/
 
     case DeployStatements(eplStatement: String) =>
-      log.debug("CASE DEPLOY STATEMENT TO ALL INVOLVED ACTORS")
-      val handler = context.actorOf(NotifierActor.props(self, 1 second), "notifier")
+      println("CASE DEPLOY STATEMENT TO ALL INVOLVED ACTORS")
+      val handler = context.actorOf(NotifierActor.props(self, 10 seconds), "notifier")
       //createdActors foreach { actor => createEPL(eplStatement)(evt => actor.tell(evt, handler))}
       //createEPL(eplStatement)(evt => createdActors.head.tell(evt, handler))
       //createEPL(eplStatement)(evt => createdActors(1).tell(evt, handler))
@@ -123,3 +156,59 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
     case evt@_ => epRuntime.sendEvent(evt)
   }
 }
+
+object Handler{
+  object Messages {
+    sealed abstract class HandlerMessage
+    case object HandlerResponse                                                  extends HandlerMessage
+    case class HandlerResponseResult(response: Tuple2[Option[Any], Option[Any]]) extends HandlerMessage
+    case object RequestTimeout                                                   extends HandlerMessage
+  }
+
+  def props(originalSender: ActorRef, actors: Map[String, ActorRef], delay: FiniteDuration): Props = {
+    Props(new Handler(originalSender, actors, delay))
+  }
+}
+
+class Handler(originalSender: ActorRef, actors: Map[String, ActorRef], delay: FiniteDuration) extends Actor with ActorLogging {
+  import Handler.Messages._
+
+  private final val eventsCount = 2
+  private var resultsFired = Tuple2[Option[Any], Option[Any]] (Some(1), Some(2))
+
+  def receive = LoggingReceive {
+    case EsperEvent(clz, underlying) =>
+      println(s"ESPER EVENT IN HANDLEr: $clz $underlying")
+      underlying match {
+        case Buy(s, p, a) =>
+          actors.default("buyer") ! Buy(s, p, a)
+      }
+    case HandlerResponse =>
+      // add response to resultsFired, then collectResponse
+      collectResponse
+    case RequestTimeout  =>
+      println("TIMEOUT RECEIVED: ")
+      sendResponseAndShutdown(RequestTimeout)
+  }
+
+  private def collectResponse = {
+    resultsFired match {
+      case (Some(a), Some(b)) =>
+        println("Results received for both events")
+        timeoutMessage.cancel
+        sendResponseAndShutdown(resultsFired)
+      case _ =>
+        println("Results not ready yet")
+    }
+  }
+
+  private def sendResponseAndShutdown(response: Any) = {
+    originalSender ! response
+    println("Stopping context capturing actor")
+    context.stop(self)
+  }
+
+  import context.dispatcher
+  val timeoutMessage = context.system.scheduler.scheduleOnce(delay){self ! RequestTimeout}
+}
+

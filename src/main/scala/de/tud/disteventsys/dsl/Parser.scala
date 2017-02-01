@@ -51,15 +51,17 @@ trait Clause extends JavaTokenParsers with ClauseHelper {
     s"from ${clz.capitalize}\n"
   }
 
-  def fromStreamClause[A](stream: EsperStream[A]) = {
+  def fromStreamClause(stream: EsperStream[_]) = {
     // TODO; reference to stream?
-    s"from ${stream.getStreamReference}"
+    //TODO: event fires, this fires
+    //s"from ${stream.getStreamReference}"
   }
 }
 
 trait Parser[+T] {
 
   def parse[A >: T](tree: Tree[A]) = Grammar.parseAll(tree)
+  def parseWithFields[A >: T](tree: Tree[A]) = Grammar.parseWithFields(tree)
 
   object Grammar extends Clause{
 
@@ -72,7 +74,7 @@ trait Parser[+T] {
             case Insert(stream)     => insertClause(stream)
             case Select(fields)     => selectClause(fields)
             case From(clz)          => fromClause(clz)
-            case FromStream(stream) => fromStreamClause(stream)
+            //case FromStream(stream) => fromStreamClause(stream)
             case _                  => "" //throw new NotImplementedException()
           }
         case _                     => throw new NotImplementedException()
@@ -84,7 +86,13 @@ trait Parser[+T] {
         t =>
           eplString = new StringBuilder(eplString + statement(t))
       }
-      eplString
+      val tempEplString = eplString
+      eplString = new StringBuilder()
+      tempEplString
+    }
+
+    def parseWithFields[A](tree: Tree[A]) = {
+
     }
   }
 }

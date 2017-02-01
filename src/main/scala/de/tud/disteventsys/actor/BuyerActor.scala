@@ -7,7 +7,7 @@ import de.tud.disteventsys.event.Event.{ Buy, EsperEvent }
   * Created by ms on 23.11.16.
   */
 class BuyerActor extends Actor with ActorLogging {
-  override def receive: Receive = {
+  def receive: Receive = {
 
     case EsperEvent(className, underlying) =>
       println(s"CASE ESPEREVENT ${className}:")
@@ -15,6 +15,6 @@ class BuyerActor extends Actor with ActorLogging {
         case Buy(s, p, a) =>
           println(s"Received Buy: ${s}, ${p}, ${a}")
       }
-    case _ => println(s"Could not find a corresponding case class")
+    case _ => println(s"Could not find a matching message")
   }
 }

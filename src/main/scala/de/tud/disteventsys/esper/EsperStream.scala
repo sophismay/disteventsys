@@ -16,4 +16,6 @@ import de.tud.disteventsys.dsl.Tree
   def getStreamReference: String = ref
 }*/
 
-case class EsperStream(stream: Stream)
+case class EsperStream[T](stream: Stream[T]){
+  def statement = stream.getStatement
+}

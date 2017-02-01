@@ -2,9 +2,11 @@ package de.tud.disteventsys.actor
 
 import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
 import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, ReceiveTimeout}
+import com.espertech.esper.client.EPStatement
 import de.tud.disteventsys.esper.EsperEngine
 
 import scala.concurrent.duration._
+import scala.util.Try
 
 /**
   * Created by ms on 18.11.16.
@@ -27,6 +29,8 @@ object EsperActor{
 
   case class DeployStatements(eplStatement: String)
 
+  case object UnregisterAllEvents
+
   //case class Deploy(eplStatement: String, name: String)
 }
 
@@ -37,6 +41,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
   context.setReceiveTimeout(20 seconds)
 
   private var createdActors: List[ActorRef] = List.empty
+  private var currentEsperStatement: EPStatement = _
 
   override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute){
       case _: ArithmeticException       => Resume
@@ -83,11 +88,11 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       val handler = context.actorOf(NotifierActor.props(self, 1 second), "notifier")
       // now match events and tell them something
       val actor = actors.head
-      createEPL(eplStatement){
+      val esperStatement: Try[EPStatement] = createEPL(eplStatement){
         evt =>
           actor.tell(evt, handler)
       }
-
+      println(s"ESPER STATEMENT TRY: $esperStatement")
       /*val actor = {for {
         actor <- createdActors
         if(actor.path.name == name)
@@ -101,11 +106,17 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       //createdActors foreach { actor => createEPL(eplStatement)(evt => actor.tell(evt, handler))}
       //createEPL(eplStatement)(evt => createdActors.head.tell(evt, handler))
       //createEPL(eplStatement)(evt => createdActors(1).tell(evt, handler))
-      createEPL(eplStatement){
+      val esperStatement: Try[EPStatement] = createEPL(eplStatement){
         evt =>
           createdActors map { actor =>
             actor.tell(evt, handler) }
       }
+      currentEsperStatement = esperStatement.getOrElse( throw new NoSuchFieldError )
+      println(s"ESPER STATEMENT TRY: $currentEsperStatement")
+
+    case UnregisterAllEvents =>
+      if(!currentEsperStatement.isStopped) currentEsperStatement.removeAllListeners()
+
   }
 
   private def dispatchingToEsper(): Receive = {

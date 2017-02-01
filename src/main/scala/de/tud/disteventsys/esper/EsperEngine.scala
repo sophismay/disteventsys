@@ -19,6 +19,7 @@ trait EsperEngine {
   //
   lazy val epService = EPServiceProviderManager.getDefaultProvider(esperConfig)
   lazy val epRuntime = epService.getEPRuntime
+  //private var stat: EPStatement = _
 
   def registerEventType(name: String, clz: Class[_ <: Any]) = {
     esperConfig.addEventType(name, clz.getName)
@@ -26,6 +27,7 @@ trait EsperEngine {
 
   def insertEvent(evt:Any) {
     epRuntime.sendEvent(evt)
+    epService.getEPAdministrator.stopAllStatements
   }
 
   def createEPL(epl:String)(notifySubscribers: EsperEvent=>Unit):Try[EPStatement] = {

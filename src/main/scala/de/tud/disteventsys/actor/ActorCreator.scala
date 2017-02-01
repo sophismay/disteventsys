@@ -1,12 +1,16 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+
 import scala.concurrent.Future
 import de.tud.disteventsys.actor.EsperActor._
 import de.tud.disteventsys.actor.BuyerActor
+import de.tud.disteventsys.dsl.Tree
 import de.tud.disteventsys.esper.Statement
 import de.tud.disteventsys.event.Event._
 import de.tud.disteventsys.esper.Stream
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * Created by ms on 14.12.16.
@@ -41,12 +45,12 @@ class Creator extends Actor with ActorSystemInitiator{
   }
 }
 
-trait ActorCreator{
+trait ActorCreator {
   //private var eplString: String = _
   private lazy val system = ActorSystem()
   private lazy val esperActor = system.actorOf(Props(classOf[EsperActor]))
 
-  def process(eplStringBuilder: StringBuilder): Future[Stream] = Future {
+  def process[T](eplStringBuilder: StringBuilder, node: Tree[T]): Future[Stream[T]] = Future {
     // initialize statement
     val statement = new Statement()
     statement.initEpl(eplStringBuilder)
@@ -84,10 +88,17 @@ trait ActorCreator{
     Some(esperActor)
     //Some(buyer)
     //TODO: return instead stream
-    Stream(statement)
+    Stream(statement, node)
   }
 
-  def dummyData = {
+  def processWithStreams(sb: StringBuilder, streams: Array[Stream[_]]) = {
+    val stream = streams.head
+    // unregister current esperActor Events and merge current eplString with that of String
+    // next, include timeout
+    esperActor ! UnregisterAllEvents
+  }
+
+  private def dummyData = {
     val prices = Array(
       Price("BP", 7.61), Price("RDSA", 2101.00), Price("RDSA", 2209.00),
       Price("BP",7.66), Price("BP", 7.64), Price("BP", 7.67)

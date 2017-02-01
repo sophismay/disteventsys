@@ -3,8 +3,13 @@ package de.tud.disteventsys.dsl
 import de.tud.disteventsys.actor.ActorCreator
 import de.tud.disteventsys.event.Event._
 import de.tud.disteventsys.dsl.QueryAST.{From, Select}
-import de.tud.disteventsys.esper.EsperStream
+import de.tud.disteventsys.esper.{EsperStream, Statement}
 import de.tud.disteventsys.common._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Await
+
+import scala.concurrent.duration.Duration
 
 
 /**
@@ -26,7 +31,7 @@ object QueryAST {
   case class Select(fields: List[String])                   extends Operator
   case class Insert(stream: String)                         extends Operator
   case class From(clz: String)                              extends Operator
-  case class FromStream[A](es: EsperStream[A])              extends Operator
+  case class FromStream(es: EsperStream[_])              extends Operator
   //case class From(parent: Operator, clz: String)            extends Operator
   case class Where(expr: Expr)                              extends Operator
 
@@ -105,6 +110,14 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
         treeSize(left) + treeSize(right)
     }
   }
+  // to retraverse tree when Stream case encountered
+  private def retraverse = {
+    currentNode match {
+      case NonEmptyTree(d, l, r) =>
+
+      case EmptyTree    =>
+    }
+  }
   
   def SELECT[T](gen: Generator[T]) = {
     //val parts = fields.split(",")
@@ -168,7 +181,7 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
       }
     }
 
-    def checkLastNodeBeforeAddToStream[A](stream: EsperStream[A]) = {
+    def checkLastNodeBeforeAddToStream(stream: EsperStream[_]) = {
       val lastNode = currentNode.lastNode
       lastNode match {
         case EmptyTree => throwArgumentError
@@ -192,10 +205,16 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
         //TODO: actor dependency stuff
       }
     }
-    if(gen.isInstanceOf[EsperStream[Operator]]){
+    if(gen.isInstanceOf[EsperStream[_]]){
       println(s"INSTANCE OF ESPERSTREAM: $gen")
       gen match {
-        
+        case EsperStream(stream) =>
+          //TODO: get node tree from stream and traverse current node to left side of stream tree
+          // TODO: preempt after fromStream encountered
+          createStreamFromStream(Array(stream))
+          //val tree = stream.getTree
+          //println(s"CURRENT NODE BEFORE RETRAVERSING: $currentNode")
+          //checkLastNodeBeforeAddToStream(EsperStream(stream))
         /*case EsperStream(actor, esb, node) =>
           checkLastNodeBeforeAddToStream(EsperStream(actor, esb, node))*/
       }
@@ -209,20 +228,36 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
   /*def FROM[A](stream: A)(implicit hp: HandleParam[A]) = {
 
   }*/
+  private def createStreamFromStream(streams: Array[de.tud.disteventsys.esper.Stream[_]]) = {
+    //parseWithFields
+    val parsedStringBuilder = createEpl
+    processWithStreams(parsedStringBuilder, streams)
+  }
 
   def createStream = {
-    createEpl
+    val parsedStringBuilder = createEpl
+    val stream = processEpl(parsedStringBuilder)
+    // reset tree and eplString
+    currentNode = EmptyTree
+    eplString = ""
+    EsperStream(stream)
+  }
+
+  private def processEpl(sb: StringBuilder) = {
+    // TODO: better way to handle future
+    val streamFuture = process(sb, currentNode)
+    val stream = Await.result(streamFuture, Duration.Inf)
+    println(s"BEFORE RESETTING: ${sb.mkString}")
+    stream
   }
 
   private def createEpl = {
-    val parsedStringBuilder = parse(currentNode)
+    parse(currentNode)
     //eplString = parsed.mkString
-    // TODO: change to future
-    val streamFuture = process(parsedStringBuilder)
-    for {
+    /*for {
       stream <- streamFuture
-    } yield EsperStream(stream)
-    println(s"EPL STRING: ${eplString}")
+    } yield EsperStream(stream)*/
+    //println(s"EPL STRING: ${eplString}")
     //println(s"EXPLODING EPLSTRING: ${eplString.split(' ').foreach(f=>println(s"$f : ah"))}")
 
     // return Esper Stream representation

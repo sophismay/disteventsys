@@ -4,6 +4,7 @@ import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
 import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, ReceiveTimeout}
 import akka.event.LoggingReceive
 import com.espertech.esper.client.EPStatement
+import de.tud.disteventsys.actor.Handler.Messages.SecondHandlerResponse
 import de.tud.disteventsys.esper.EsperEngine
 import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
 
@@ -37,6 +38,10 @@ object EsperActor{
 
   case object UnregisterAllEvents
 
+  case class DeployStream(eventWithFields: Tuple2[String, List[String]])
+
+  case class DeployStatementsss(eplStatements: Array[String])
+
   //case class Deploy(eplStatement: String, name: String)
 }
 
@@ -52,6 +57,8 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
   private var currentEsperStatement: EPStatement = _
   private var handlers: Array[ActorRef] = Array.empty
   private var actors: Map[String, ActorRef] = Map.empty
+  private var EPStatements: Array[Try[EPStatement]] = Array.empty
+  private var EPStatement: Try[EPStatement] = _
 
   override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute){
       case _: ArithmeticException       => Resume
@@ -60,8 +67,9 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       case _: Exception                 => Escalate
     }
 
-  def receive: Receive = {
+  def receive: Receive = beforeDispatching()
 
+  private def beforeDispatching(): Receive = {
     case ReceiveTimeout =>
       // no progress within 20 seconds, shutting down
       log.error("Shutting down due to unavailable service")
@@ -78,8 +86,16 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       }
     //TODO: is this needed? just create in ActorCreator and leave as it is?
     case InitializeActors(mActors: Map[String, ActorRef]) =>
-      actors = actors ++ mActors
-      println(s"ACTIRS: $actors")
+      if(actors.keys.size == 0){
+        actors = actors ++ mActors
+        println(s"ACTIRS: $actors")
+      }
+
+    case DeployStream(eventWithFields: Tuple2[String, List[String]]) =>
+
+      //val handler = context.actorOf(Handler.props(self, actors, 10 seconds), s"handler${rand.nextLong()}")
+      //handlers = handlers :+ handler
+
 
     /*case DeployStatement(epl, listener) =>
       println(s"INSIDE DEPLOY STATEMENT: ${listener}")
@@ -87,6 +103,13 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
 
     case StartProcessing                =>
       context.become(dispatchingToEsper)
+
+    case DeployStatementsss(eplStatements: Array[String]) =>
+      val handler = context.actorOf(Handler.props(self, actors, 10 seconds), s"handler${rand.nextLong()}")
+      eplStatements foreach {
+        es =>
+          EPStatement = createEPL(es){evt => handler ! evt }
+      }
 
     /*case CreateActor(clz)       =>
       clz match {
@@ -100,15 +123,15 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
           createdActors = createdActors :+ context.actorOf(Props(classOf[PriceActor]), "price")
       }*/
     case CreateActor =>
-
+      println("CREATE ACTOR CALLED------------")
     case DeployStatementss(statements: Array[String]) =>
       //val handler = context.actorOf(Handler.props(self, 1 second), "handler")
       statements foreach {
         statement =>
           val handler = context.actorOf(Handler.props(self, actors, 10 seconds), "handler" + rand.nextLong())
           handlers = handlers :+ handler
-          createEPL(statement){evt => handler ! evt;println(s"HANDLER CREATED $handler for statement $statement with event $evt")}
-
+          EPStatements = EPStatements :+
+            createEPL(statement){evt => handler ! evt;println(s"HANDLER CREATED $handler for statement $statement with event $evt")}
       }
 
     case DeployStatement(eplStatement, name) =>
@@ -126,12 +149,12 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
           actor.tell(evt, handler)
       }
       println(s"ESPER STATEMENT TRY: $esperStatement")
-      /*val actor = {for {
-        actor <- createdActors
-        if(actor.path.name == name)
-      } yield actor}.head
-      println(s"CASE DEPLOY: $actor")
-      createEPL(eplStatement)(evt => actor ! evt)*/
+    /*val actor = {for {
+      actor <- createdActors
+      if(actor.path.name == name)
+    } yield actor}.head
+    println(s"CASE DEPLOY: $actor")
+    createEPL(eplStatement)(evt => actor ! evt)*/
 
     case DeployStatements(eplStatement: String) =>
       println("CASE DEPLOY STATEMENT TO ALL INVOLVED ACTORS")
@@ -147,13 +170,37 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       currentEsperStatement = esperStatement.getOrElse( throw new NoSuchFieldError )
       println(s"ESPER STATEMENT TRY: $currentEsperStatement")
 
+
     case UnregisterAllEvents =>
-      if(!currentEsperStatement.isStopped) currentEsperStatement.removeAllListeners()
+      EPStatements foreach {
+        tryStat =>
+          //val stat = tryStat.getOrElse(throw new NoSuchElementException)
+          val stat = tryStat.get
+          println(s"STAT FOUND, UNREGISTERING: ${stat}")
+          stat.destroy()
+      }
+      // reset
+      EPStatements = Array.empty
+      handlers = Array.empty
+      //println(s"BEFORE UNREGISTERING: ${currentEsperStatement.getUpdateListeners}")
+    /*if(!currentEsperStatement.isStopped)
+      currentEsperStatement.removeAllListeners()*/
 
   }
 
   private def dispatchingToEsper(): Receive = {
-    case evt@_ => epRuntime.sendEvent(evt)
+    case UnregisterAllEvents =>
+      println(s"CASE UNREGISTER ALL EVTS: ${currentEsperStatement}")
+      /*if(!currentEsperStatement.isStopped)
+        currentEsperStatement.removeAllListeners()*/
+      //println(s"AFTER UNREGISTERING, removing listeners: ${currentEsperStatement.getUpdateListeners}")
+      context.become(beforeDispatching)
+      self ! UnregisterAllEvents
+    // TODO: evt@_ somewhat generic and hence Received Buy is logged 12 times when it's above case UnregisterAllEvents
+    case evt@_ =>
+      println(s"CASE EVT DISPATCH: ${evt}")
+      epRuntime.sendEvent(evt)
+    case _ =>
   }
 }
 
@@ -163,6 +210,7 @@ object Handler{
     case object HandlerResponse                                                  extends HandlerMessage
     case class HandlerResponseResult(response: Tuple2[Option[Any], Option[Any]]) extends HandlerMessage
     case object RequestTimeout                                                   extends HandlerMessage
+    case object SecondHandlerResponse                                            extends HandlerMessage
   }
 
   def props(originalSender: ActorRef, actors: Map[String, ActorRef], delay: FiniteDuration): Props = {
@@ -175,7 +223,7 @@ class Handler(originalSender: ActorRef, actors: Map[String, ActorRef], delay: Fi
 
   private final val eventsCount = 2
   private var resultsFired = Tuple2[Option[Any], Option[Any]] (Some(1), Some(2))
-  
+
   def receive = LoggingReceive {
     case EsperEvent(clz, underlying) =>
       println(s"ESPER EVENT IN HANDLEr: $clz $underlying")
@@ -229,3 +277,26 @@ class Handler(originalSender: ActorRef, actors: Map[String, ActorRef], delay: Fi
   val timeoutMessage = context.system.scheduler.scheduleOnce(delay){self ! RequestTimeout}
 }
 
+class SecondHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event: Any) extends Actor with ActorLogging{
+  def receive = LoggingReceive {
+    case EsperEvent(clz, underlying) =>
+      val actor = getActor(underlying)
+      underlying match {
+        case evt@_ =>
+          if(evt.isInstanceOf[event.type]){
+            actor ! EsperEvent(clz, underlying)
+            originalSender ! SecondHandlerResponse
+          }
+      }
+  }
+
+  private def getActor(underlying: AnyRef): ActorRef = {
+    def getter(name: String) = { actors.get(name) match { case Some(actor) => actor } }
+    underlying match {
+      case Sell(s, p, a) => getter("seller")
+      case Buy(s, p, a)  => getter("buyer")
+      case Price(s, p)   => getter("pricer")
+      case _             =>
+    }
+  }
+}

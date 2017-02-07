@@ -25,6 +25,12 @@ class Statement {
     println(s"EVENTS IN EPLSTRING: ${eplEvents}")
   }
 
+  // a query from Stream basically only needs to have the Event it writes to
+  // together with the data (fields)
+  def getFirstEventWithFields = {
+    (firstEvent, )
+  }
+
   def getAllEvents: Map[String, Class[_]] = {
     classMappings filterKeys { clz => eplEvents.contains(clz) }
   }

@@ -31,7 +31,7 @@ object QueryAST {
   case class Select(fields: List[String])                   extends Operator
   case class Insert(stream: String)                         extends Operator
   case class From(clz: String)                              extends Operator
-  case class FromStream(es: EsperStream[_])              extends Operator
+  case class FromStream(es: EsperStream[_])                 extends Operator
   //case class From(parent: Operator, clz: String)            extends Operator
   case class Where(expr: Expr)                              extends Operator
 
@@ -99,6 +99,9 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
 
   private var eplString: String = _
   private val rootNode = empty
+  // flag to check for dependence of dsl instance on stream
+  private var dependsOnStream = false
+  private var dependentStreams: Array[de.tud.disteventsys.esper.Stream[_]] = Array.empty
   //private val rootNode = node("root")
   private var currentNode: Tree[Any] = rootNode
 
@@ -211,7 +214,10 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
         case EsperStream(stream) =>
           //TODO: get node tree from stream and traverse current node to left side of stream tree
           // TODO: preempt after fromStream encountered
-          createStreamFromStream(Array(stream))
+          // flag to depict dependence on stream
+          dependsOnStream = true
+          dependentStreams = dependentStreams :+ stream
+          //createStreamFromStream(Array(stream))
           //val tree = stream.getTree
           //println(s"CURRENT NODE BEFORE RETRAVERSING: $currentNode")
           //checkLastNodeBeforeAddToStream(EsperStream(stream))
@@ -220,26 +226,36 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
       }
     }
 
-
-
     self
   }
 
   /*def FROM[A](stream: A)(implicit hp: HandleParam[A]) = {
 
   }*/
-  private def createStreamFromStream(streams: Array[de.tud.disteventsys.esper.Stream[_]]) = {
-    //parseWithFields
-    val parsedStringBuilder = createEpl
-    processWithStreams(parsedStringBuilder, streams)
+  private def resetVariables = {
+    currentNode = EmptyTree
+    eplString = ""
+    dependsOnStream = false
   }
 
-  def createStream = {
+  private def createStreamFromStream = {
+    //parseWithFields
+    val parsedStringBuilder = createEpl
+    val stream = processWithStreams(parsedStringBuilder, dependentStreams, currentNode)
+
+    resetVariables
+    EsperStream(stream)
+  }
+
+  def createStream: EsperStream[_] = {
+    if(!dependsOnStream) return createStreamFromStatement else return createStreamFromStream
+  }
+
+  private def createStreamFromStatement = {
     val parsedStringBuilder = createEpl
     val stream = processEpl(parsedStringBuilder)
     // reset tree and eplString
-    currentNode = EmptyTree
-    eplString = ""
+    resetVariables
     EsperStream(stream)
   }
 

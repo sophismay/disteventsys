@@ -48,7 +48,7 @@ class Creator extends Actor with ActorSystemInitiator{
 trait ActorCreator {
   //private var eplString: String = _
   private lazy val system = ActorSystem()
-  private lazy val esperActor = system.actorOf(Props(classOf[EsperActor]))
+  private lazy val esperActor = system.actorOf(Props(classOf[EsperActor]), "esper")
   private lazy val buyerActor = system.actorOf(Props(classOf[BuyerActor]), "buyer")
   private lazy val priceActor = system.actorOf(Props(classOf[PriceActor]), "pricer")
   private lazy val sellerActor = system.actorOf(Props(classOf[SellerActor]), "seller")
@@ -96,24 +96,51 @@ trait ActorCreator {
     dummyData
 
     //TODO: create separate actor each time its called
-    Some(esperActor)
+    //Some(esperActor)
     //Some(buyer)
     //TODO: return instead stream
     Stream(statement, node)
   }
 
-  def processWithStreams(sb: StringBuilder, streams: Array[Stream[_]]) = {
+  def processWithStreams[T](sb: StringBuilder, streams: Array[Stream[_]], node: Tree[T]) = {
     val statement = new Statement()
     statement.initEpl(sb)
     val stream = streams.head
     val currentEplString = statement.getEplStatement
-    val oldStatement = stream.getStatement
-    val oldEplString = oldStatement.getEplStatement
+    val newStream = new Stream[T](statement, node)
+    //val oldStatement = stream.getStatement
+    //val oldEplString = oldStatement.getEplStatement
 
+    val oldStatements = streams map { s => s.getStatement }
+    val oldEplStrings = oldStatements map { os => os.getEplStatement }
+    //val (oldStatements, oldEplStrings) = streams map { s => (s.getStatement, s.getStatement.getEplStatement)}
     // unregister current esperActor Events and merge current eplString with that of String
     // by creating anonymous actors to handle
     // next, include timeout
+    println(s"ABOUT TO UNREGISTER EVENTS: ${esperActor.path.getElements}")
+    // stop events or unregister?
     esperActor ! UnregisterAllEvents
+    println(s"AFTER ABOUT TO UNREGISTER EVENTS")
+
+    esperActor ! InitializeActors(actors)
+    // add old statements with new ones
+    var maps: Map[String, Class[_]] = Map.empty
+    oldStatements foreach { os => maps = maps ++ os.getAllEvents}
+    maps = maps ++ statement.getAllEvents
+    //val a = oldStatements map { os: Statement => os.getAllEvents }
+    //val s = a ++ statement.getAllEvents
+    println(s"MAP OLD + NEW: ${maps}")
+    maps foreach {
+      case (clz, underlyingClass) =>
+        println(s"REGISTER EVEnt TYPE 2: $clz, $underlyingClass")
+        esperActor ! RegisterEventType(clz, underlyingClass)
+    }
+    esperActor ! DeployStatementss(oldEplStrings)
+    esperActor ! DeployStream(newStream.getEventWithFields)
+    esperActor ! StartProcessing
+
+    //Stream(statement, node)
+    newStream
   }
 
   private def dummyData = {

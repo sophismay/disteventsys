@@ -28,7 +28,7 @@ class Statement {
   // a query from Stream basically only needs to have the Event it writes to
   // together with the data (fields)
   def getFirstEventWithFields = {
-    (firstEvent, )
+    //(firstEvent, )
   }
 
   def getAllEvents: Map[String, Class[_]] = {

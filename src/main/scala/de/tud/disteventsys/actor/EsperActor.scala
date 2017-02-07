@@ -4,7 +4,7 @@ import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
 import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, ReceiveTimeout}
 import akka.event.LoggingReceive
 import com.espertech.esper.client.EPStatement
-import de.tud.disteventsys.actor.Handler.Messages.SecondHandlerResponse
+import de.tud.disteventsys.actor.MainHandler.Messages.SecondHandlerResponse
 import de.tud.disteventsys.esper.EsperEngine
 import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
 
@@ -105,7 +105,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       context.become(dispatchingToEsper)
 
     case DeployStatementsss(eplStatements: Array[String]) =>
-      val handler = context.actorOf(Handler.props(self, actors, 10 seconds), s"handler${rand.nextLong()}")
+      val handler = context.actorOf(MainHandler.props(self, actors, 10 seconds), s"handler${rand.nextLong()}")
       eplStatements foreach {
         es =>
           EPStatement = createEPL(es){evt => handler ! evt }
@@ -128,7 +128,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       //val handler = context.actorOf(Handler.props(self, 1 second), "handler")
       statements foreach {
         statement =>
-          val handler = context.actorOf(Handler.props(self, actors, 10 seconds), "handler" + rand.nextLong())
+          val handler = context.actorOf(MainHandler.props(self, actors, 10 seconds), "handler" + rand.nextLong())
           handlers = handlers :+ handler
           EPStatements = EPStatements :+
             createEPL(statement){evt => handler ! evt;println(s"HANDLER CREATED $handler for statement $statement with event $evt")}
@@ -204,99 +204,4 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
   }
 }
 
-object Handler{
-  object Messages {
-    sealed abstract class HandlerMessage
-    case object HandlerResponse                                                  extends HandlerMessage
-    case class HandlerResponseResult(response: Tuple2[Option[Any], Option[Any]]) extends HandlerMessage
-    case object RequestTimeout                                                   extends HandlerMessage
-    case object SecondHandlerResponse                                            extends HandlerMessage
-  }
 
-  def props(originalSender: ActorRef, actors: Map[String, ActorRef], delay: FiniteDuration): Props = {
-    Props(new Handler(originalSender, actors, delay))
-  }
-}
-
-class Handler(originalSender: ActorRef, actors: Map[String, ActorRef], delay: FiniteDuration) extends Actor with ActorLogging {
-  import Handler.Messages._
-
-  private final val eventsCount = 2
-  private var resultsFired = Tuple2[Option[Any], Option[Any]] (Some(1), Some(2))
-
-  def receive = LoggingReceive {
-    case EsperEvent(clz, underlying) =>
-      println(s"ESPER EVENT IN HANDLEr: $clz $underlying")
-      underlying match {
-        case Buy(s, p, a) =>
-          actors.get("buyer") match {
-            case Some(act) =>
-              act ! Buy(s, p, a)
-            case _         => println("BUY NOT MATCHED IN HANDLER")
-          }
-        case Price(s, p) =>
-          actors.get("pricer") match {
-            case Some(act) =>
-              act ! Price(s, p)
-            case _         => println("PRICE NOT MATCHED IN HANDLER")
-          }
-        case Sell(s, p, a)  =>
-          actors.get("seller") match {
-            case Some(act) =>
-              act ! Sell(s, p, a)
-            case _         => println("SELL NOT MATCHED IN HANDLER")
-          }
-          //actors.default("buyer") ! Buy(s, p, a)
-      }
-    case HandlerResponse =>
-      // add response to resultsFired, then collectResponse
-      collectResponse
-    case RequestTimeout  =>
-      println("TIMEOUT RECEIVED: ")
-      sendResponseAndShutdown(RequestTimeout)
-  }
-
-  private def collectResponse = {
-    resultsFired match {
-      case (Some(a), Some(b)) =>
-        println("Results received for both events")
-        timeoutMessage.cancel
-        sendResponseAndShutdown(resultsFired)
-      case _ =>
-        println("Results not ready yet")
-    }
-  }
-
-  private def sendResponseAndShutdown(response: Any) = {
-    originalSender ! response
-    println("Stopping context capturing actor")
-    context.stop(self)
-  }
-
-  import context.dispatcher
-  val timeoutMessage = context.system.scheduler.scheduleOnce(delay){self ! RequestTimeout}
-}
-
-class SecondHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event: Any) extends Actor with ActorLogging{
-  def receive = LoggingReceive {
-    case EsperEvent(clz, underlying) =>
-      val actor = getActor(underlying)
-      underlying match {
-        case evt@_ =>
-          if(evt.isInstanceOf[event.type]){
-            actor ! EsperEvent(clz, underlying)
-            originalSender ! SecondHandlerResponse
-          }
-      }
-  }
-
-  private def getActor(underlying: AnyRef): ActorRef = {
-    def getter(name: String) = { actors.get(name) match { case Some(actor) => actor } }
-    underlying match {
-      case Sell(s, p, a) => getter("seller")
-      case Buy(s, p, a)  => getter("buyer")
-      case Price(s, p)   => getter("pricer")
-      case _             =>
-    }
-  }
-}

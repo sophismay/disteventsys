@@ -82,7 +82,7 @@ trait ActorCreator {
         //esperActor ! CreateActor(clz)
     }
     //esperActor ! DeployStatements(eplStatement)
-    esperActor ! DeployStatementss(Array(eplStatement))
+    esperActor ! DeployStatementsss(Array(eplStatement))
     // TODO: make statement a trait so that one can not only infer the eplString but also the classes, etc
     //TODO: infer actor(eg. buyer) from statement
     //esperActor ! RegisterEventType("Price", classOf[Price])
@@ -135,7 +135,7 @@ trait ActorCreator {
         println(s"REGISTER EVEnt TYPE 2: $clz, $underlyingClass")
         esperActor ! RegisterEventType(clz, underlyingClass)
     }
-    esperActor ! DeployStatementss(oldEplStrings)
+    esperActor ! DeployStatementsss(oldEplStrings)
     esperActor ! DeployStream(newStream.getEventWithFields)
     esperActor ! StartProcessing
 

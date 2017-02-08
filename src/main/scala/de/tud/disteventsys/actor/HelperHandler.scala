@@ -1,6 +1,6 @@
 package de.tud.disteventsys.actor
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.LoggingReceive
 import de.tud.disteventsys.actor.MainHandler.Messages.SecondHandlerResponse
 import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
@@ -8,11 +8,13 @@ import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
 /**
   * Created by ms on 07.02.17.
   */
-object HelpingHandler {
-
+object HelperHandler {
+  def props(originalSender: ActorRef, actors: Map[String, ActorRef], event: AnyRef): Props = {
+    Props(new HelperHandler(originalSender, actors, event))
+  }
 }
 
-class SecondHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event: AnyRef) extends Actor with ActorLogging{
+class HelperHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event: AnyRef) extends Actor with ActorLogging{
   def receive = LoggingReceive {
     case EsperEvent(clz, underlying) =>
       val actor = getActor(underlying)

@@ -34,6 +34,7 @@ class Statement {
   def getAllEvents: Map[String, Class[_]] = {
     classMappings filterKeys { clz => eplEvents.contains(clz) }
   }
+  def getEventsList = eplEvents
   def getEplStatement = eplStatement
   // get the event to be associated with actor
   def getResponsibleEvent = {

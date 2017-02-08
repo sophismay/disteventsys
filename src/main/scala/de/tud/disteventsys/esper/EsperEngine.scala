@@ -27,7 +27,7 @@ trait EsperEngine {
 
   def insertEvent(evt:Any) {
     epRuntime.sendEvent(evt)
-    epService.getEPAdministrator.stopAllStatements
+    //epService.getEPAdministrator.stopAllStatements
   }
 
   def createEPL(epl:String)(notifySubscribers: EsperEvent=>Unit):Try[EPStatement] = {

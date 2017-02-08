@@ -74,7 +74,6 @@ trait ActorCreator {
     println(s"NAMEOFACTOR ${buyerActor.path.name}")
     esperActor ! InitializeActors(actors)
 
-    //TODO: infer classes from statement
     // DONE
     statement.getAllEvents foreach {
       case (clz, underlyingClass) =>
@@ -82,7 +81,7 @@ trait ActorCreator {
         //esperActor ! CreateActor(clz)
     }
     //esperActor ! DeployStatements(eplStatement)
-    esperActor ! DeployStatementsss(Array(eplStatement))
+    esperActor ! DeployStatementsss(Array(eplStatement), statement.getEventsList, None)
     // TODO: make statement a trait so that one can not only infer the eplString but also the classes, etc
     //TODO: infer actor(eg. buyer) from statement
     //esperActor ! RegisterEventType("Price", classOf[Price])
@@ -135,10 +134,19 @@ trait ActorCreator {
         println(s"REGISTER EVEnt TYPE 2: $clz, $underlyingClass")
         esperActor ! RegisterEventType(clz, underlyingClass)
     }
-    esperActor ! DeployStatementsss(oldEplStrings)
-    esperActor ! DeployStream(newStream.getEventWithFields)
-    esperActor ! StartProcessing
 
+    // get events list for all old statements
+    // excluding current eplString because it depends on the above
+    println("befor massacre")
+    val eventsList = (oldStatements map { os => os.getEventsList }).flatten.toList
+    //eventsList foreach { e => println(s"EVENTSLIST FL: $e")}
+    println(s"EVENTSLIST FLATTEN: ${eventsList} ${newStream.getEventWithFields}")
+    val eventsWithFields = newStream.getEventWithFields
+    println("BEFORE CALLING DEPLOY STATEMENTSSS 2nd call")
+    esperActor ! DeployStatementsss(oldEplStrings, eventsList, Some(eventsWithFields))
+    //esperActor ! DeployStream(newStream.getEventWithFields)
+    esperActor ! StartProcessing
+    dummyData
     //Stream(statement, node)
     newStream
   }

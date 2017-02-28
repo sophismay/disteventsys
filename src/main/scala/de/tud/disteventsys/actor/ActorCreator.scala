@@ -132,18 +132,30 @@ trait ActorCreator {
     //val a = oldStatements map { os: Statement => os.getAllEvents }
     //val s = a ++ statement.getAllEvents
     println(s"MAP OLD + NEW: ${maps}")
-    /*maps foreach {
+    maps foreach {
       case (clz, underlyingClass) =>
         println(s"REGISTER EVEnt TYPE 2: $clz, $underlyingClass")
         esperActor ! RegisterEventType(clz, underlyingClass)
-    }*/
-    // trying above with future to test
-    val oldNewMapsRegisterFuture: Future[Unit] = Future { maps map {
+    }
+    // get events list for all old statements
+    // excluding current eplString because it depends on the above
+    println("before massacre")
+    val eventsList = (oldStatements map { os => os.getEventsList }).flatten.toList
+    //eventsList foreach { e => println(s"EVENTSLIST FL: $e")}
+    println(s"EVENTSLIST FLATTEN: ${eventsList}")
+    val eventsWithFields = newStream.getEventWithFields
+    println(s"BEFORE CALLING DEPLOY STATEMENTSSS 2nd call: $eventsWithFields")
+    esperActor ! DeployStatementsss(oldEplStrings, eventsList, Some(eventsWithFields))
+    //esperActor ! DeployStream(newStream.getEventWithFields)
+    esperActor ! StartProcessing
+
+    // trying above foreach of maps with future to test
+    /*val oldNewMapsRegisterFuture: Future[Unit] = Future { maps map {
       case(clz, uc) =>
         esperActor ! RegisterEventType(clz, uc)
-    }}
+    }}*/
     //val registerResulUnit = Await.result(oldNewMapsRegisterFuture, Duration.Inf)
-    val streamFuture = Future { oldNewMapsRegisterFuture map {
+    /*val streamFuture = Future { oldNewMapsRegisterFuture map {
       o: Unit =>
         println(s"MAPPED: $o")
         // get events list for all old statements
@@ -156,18 +168,22 @@ trait ActorCreator {
         println(s"BEFORE CALLING DEPLOY STATEMENTSSS 2nd call: $eventsWithFields")
         esperActor ! DeployStatementsss(oldEplStrings, eventsList, Some(eventsWithFields))
         //esperActor ! DeployStream(newStream.getEventWithFields)
-        //esperActor ! StartProcessing
-        dummyData
-        //Stream(statement, node)
-        newStream
+        esperActor ! StartProcessing
+
     }}
-    Await.ready(streamFuture, Duration.Inf)
-    streamFuture.onSuccess{
+    Await.ready(streamFuture, Duration.Inf)*/
+
+    //Stream(statement, node)
+    //newStream
+    /*streamFuture.onSuccess{
       case stream =>
-        println(s"ON success of stream future: $stream")
-        stream foreach { s => variableStream = s}
-    }
-    variableStream
+        variableStream = newStream
+        //println(s"ON success of stream future: $stream")
+        //stream foreach { s => variableStream = s}
+    }*/
+    println(s"before returning variable Stream: $newStream")
+    dummyData
+    newStream
     //val rsltStream = Await.result(streamFuture, Duration.Inf)
     //println(s"STREAM FUTURE s: $rsltStream")
     //val s = streamFuture map { s => variableStream = s }

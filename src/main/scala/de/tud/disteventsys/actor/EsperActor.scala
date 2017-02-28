@@ -61,6 +61,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
   private var EPStatements: Array[Try[EPStatement]] = Array.empty
   private var EPStatement: Try[EPStatement] = _
   private val delay = 10 seconds
+  private var currentMainHandler: ActorRef = _
 
   override val supervisorStrategy = OneForOneStrategy(maxNrOfRetries = 10, withinTimeRange = 1 minute){
       case _: ArithmeticException       => Resume
@@ -117,14 +118,18 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
       println(s"DEPLOY CALLED WITH: $eventWithFields")
       eventWithFields match {
         case Some(evtwf) =>
+          killChildActor
           val helperHandler = context.actorOf(HelperHandler.props(self, actors, evtwf))
           val mainHandler = context.actorOf(MainHandler.props(self, actors, eventsList,
             Some(helperHandler)), s"handler${rand.nextLong()}")
           println(s"MATCH IN SOME: , calling execute statements")
+          eplStatements foreach { s => println(s"Before Executing Statement in Some: $s")}
           executeStatements(eplStatements, mainHandler)
         case None =>
           val mainHandler = context.actorOf(MainHandler.props(self, actors, eventsList, None), s"handler${rand.nextLong()}")
+          currentMainHandler = mainHandler
           println("NO MATCH in deploy")
+          eplStatements foreach { s => println(s"Before Executing Statement in None: $s")}
           executeStatements(eplStatements, mainHandler)
       }
 
@@ -207,7 +212,6 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
   }
 
   private def executeStatements(eplStatements: Array[String], mainHandler: ActorRef) = {
-    eplStatements foreach { s => println(s"Executing Statement: $s")}
     eplStatements foreach {
       es =>
         EPStatement = createEPL(es){evt => mainHandler ! evt }
@@ -215,6 +219,11 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
         // below needed?
         EPStatements = EPStatements :+ EPStatement
     }
+
+  }
+
+  private def killChildActor = {
+    context.stop(currentMainHandler)
   }
 
   private def resetEPStatements = {

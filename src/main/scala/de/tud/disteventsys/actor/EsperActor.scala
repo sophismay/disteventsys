@@ -207,6 +207,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
   }
 
   private def executeStatements(eplStatements: Array[String], mainHandler: ActorRef) = {
+    eplStatements foreach { s => println(s"Executing Statement: $s")}
     eplStatements foreach {
       es =>
         EPStatement = createEPL(es){evt => mainHandler ! evt }

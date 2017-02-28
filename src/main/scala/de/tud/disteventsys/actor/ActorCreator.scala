@@ -2,7 +2,7 @@ package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 
-import scala.concurrent.Future
+import scala.concurrent.{Await, Future}
 import de.tud.disteventsys.actor.EsperActor._
 import de.tud.disteventsys.actor.BuyerActor
 import de.tud.disteventsys.dsl.Tree
@@ -11,6 +11,8 @@ import de.tud.disteventsys.event.Event._
 import de.tud.disteventsys.esper.Stream
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.util.Success
 
 /**
   * Created by ms on 14.12.16.
@@ -57,6 +59,7 @@ trait ActorCreator {
     priceActor.path.name  -> priceActor,
     sellerActor.path.name -> sellerActor
   )
+  private var variableStream: Stream[_] = _
 
   def process[T](eplStringBuilder: StringBuilder, node: Tree[T]): Future[Stream[T]] = Future {
     // initialize statement
@@ -129,26 +132,46 @@ trait ActorCreator {
     //val a = oldStatements map { os: Statement => os.getAllEvents }
     //val s = a ++ statement.getAllEvents
     println(s"MAP OLD + NEW: ${maps}")
-    maps foreach {
+    /*maps foreach {
       case (clz, underlyingClass) =>
         println(s"REGISTER EVEnt TYPE 2: $clz, $underlyingClass")
         esperActor ! RegisterEventType(clz, underlyingClass)
+    }*/
+    // trying above with future to test
+    val oldNewMapsRegisterFuture: Future[Unit] = Future { maps map {
+      case(clz, uc) =>
+        esperActor ! RegisterEventType(clz, uc)
+    }}
+    //val registerResulUnit = Await.result(oldNewMapsRegisterFuture, Duration.Inf)
+    val streamFuture = Future { oldNewMapsRegisterFuture map {
+      o: Unit =>
+        println(s"MAPPED: $o")
+        // get events list for all old statements
+        // excluding current eplString because it depends on the above
+        println("before massacre")
+        val eventsList = (oldStatements map { os => os.getEventsList }).flatten.toList
+        //eventsList foreach { e => println(s"EVENTSLIST FL: $e")}
+        println(s"EVENTSLIST FLATTEN: ${eventsList}")
+        val eventsWithFields = newStream.getEventWithFields
+        println(s"BEFORE CALLING DEPLOY STATEMENTSSS 2nd call: $eventsWithFields")
+        esperActor ! DeployStatementsss(oldEplStrings, eventsList, Some(eventsWithFields))
+        //esperActor ! DeployStream(newStream.getEventWithFields)
+        //esperActor ! StartProcessing
+        dummyData
+        //Stream(statement, node)
+        newStream
+    }}
+    Await.ready(streamFuture, Duration.Inf)
+    streamFuture.onSuccess{
+      case stream =>
+        println(s"ON success of stream future: $stream")
+        stream foreach { s => variableStream = s}
     }
-
-    // get events list for all old statements
-    // excluding current eplString because it depends on the above
-    println("befor massacre")
-    val eventsList = (oldStatements map { os => os.getEventsList }).flatten.toList
-    //eventsList foreach { e => println(s"EVENTSLIST FL: $e")}
-    println(s"EVENTSLIST FLATTEN: ${eventsList} ${newStream.getEventWithFields}")
-    val eventsWithFields = newStream.getEventWithFields
-    println("BEFORE CALLING DEPLOY STATEMENTSSS 2nd call")
-    esperActor ! DeployStatementsss(oldEplStrings, eventsList, Some(eventsWithFields))
-    //esperActor ! DeployStream(newStream.getEventWithFields)
-    esperActor ! StartProcessing
-    dummyData
-    //Stream(statement, node)
-    newStream
+    variableStream
+    //val rsltStream = Await.result(streamFuture, Duration.Inf)
+    //println(s"STREAM FUTURE s: $rsltStream")
+    //val s = streamFuture map { s => variableStream = s }
+    //variableStream
   }
 
   private def dummyData = {

@@ -84,7 +84,7 @@ trait ActorCreator {
         //esperActor ! CreateActor(clz)
     }
     //esperActor ! DeployStatements(eplStatement)
-    esperActor ! DeployStatementsss(Array(eplStatement), statement.getEventsList, None)
+    esperActor ! DeployStatementsss(Array(eplStatement), statement.getEventsList, None, statement.getResponsibleEvent)
     // TODO: make statement a trait so that one can not only infer the eplString but also the classes, etc
     //TODO: infer actor(eg. buyer) from statement
     //esperActor ! RegisterEventType("Price", classOf[Price])
@@ -145,7 +145,7 @@ trait ActorCreator {
     println(s"EVENTSLIST FLATTEN: ${eventsList}")
     val eventsWithFields = newStream.getEventWithFields
     println(s"BEFORE CALLING DEPLOY STATEMENTSSS 2nd call: $eventsWithFields")
-    esperActor ! DeployStatementsss(oldEplStrings, eventsList, Some(eventsWithFields))
+    esperActor ! DeployStatementsss(oldEplStrings, eventsList, Some(eventsWithFields), oldStatements(0).getResponsibleEvent)
     //esperActor ! DeployStream(newStream.getEventWithFields)
     esperActor ! StartProcessing
 

@@ -37,6 +37,8 @@ class Statement {
   def getEventsList = eplEvents
   def getEplStatement = eplStatement
   // get the event to be associated with actor
+  // the event that has to be acted on
+  // eg. Insert into Buy. Buy is the first(responsible) event
   def getResponsibleEvent = {
     firstEvent
   }

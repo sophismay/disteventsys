@@ -41,7 +41,7 @@ object EsperActor{
   case class DeployStream(eventWithFields: Tuple2[String, List[String]])
 
   case class DeployStatementsss(eplStatements: Array[String], eventsList: List[String],
-                                eventWithFields: Option[Tuple2[String, List[String]]])
+                                eventWithFields: Option[Tuple2[String, List[String]]], actionEvent: String)
 
   //case class Deploy(eplStatement: String, name: String)
 }
@@ -51,6 +51,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
   import EsperActor._
   import scala.util.Random
   val rand = new Random()
+  val eventTimeoutDuration: FiniteDuration = 100 millis
   // service unavailable if nothing processed within 20 seconds
   //context.setReceiveTimeout(20 seconds)
 
@@ -112,7 +113,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
     case StartProcessing                =>
       context.become(dispatchingToEsper)
 
-    case DeployStatementsss(eplStatements, eventsList, eventWithFields) =>
+    case DeployStatementsss(eplStatements, eventsList, eventWithFields, actionEvent) =>
       // TODO: helper handler passing condition
       // TODO: event passed to helperHandler
       println(s"DEPLOY CALLED WITH: $eventWithFields")
@@ -120,17 +121,17 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
         case Some(evtwf) =>
           killChildActor
           val helperHandler = context.actorOf(HelperHandler.props(self, actors, evtwf))
-          val mainHandler = context.actorOf(MainHandler.props(self, actors, eventsList,
-            Some(helperHandler)), s"handler${rand.nextLong()}")
+          currentMainHandler = context.actorOf(MainHandler.props(self, actors, eventsList,
+            Some(helperHandler), actionEvent, eventTimeoutDuration), s"handler${rand.nextLong()}")
           println(s"MATCH IN SOME: , calling execute statements")
-          eplStatements foreach { s => println(s"Before Executing Statement in Some: $s")}
-          executeStatements(eplStatements, mainHandler)
+          //eplStatements foreach { s => println(s"Before Executing Statement in Some: $s")}
+          executeStatements(eplStatements, currentMainHandler)
         case None =>
-          val mainHandler = context.actorOf(MainHandler.props(self, actors, eventsList, None), s"handler${rand.nextLong()}")
-          currentMainHandler = mainHandler
+          currentMainHandler = context.actorOf(MainHandler.props(self, actors, eventsList,
+            None, actionEvent, eventTimeoutDuration), s"handler${rand.nextLong()}")
           println("NO MATCH in deploy")
-          eplStatements foreach { s => println(s"Before Executing Statement in None: $s")}
-          executeStatements(eplStatements, mainHandler)
+          //eplStatements foreach { s => println(s"Before Executing Statement in None: $s")}
+          executeStatements(eplStatements, currentMainHandler)
       }
 
 

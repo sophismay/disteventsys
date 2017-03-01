@@ -4,7 +4,6 @@ import akka.actor.SupervisorStrategy.{Escalate, Restart, Resume, Stop}
 import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, ReceiveTimeout}
 import akka.event.LoggingReceive
 import com.espertech.esper.client.EPStatement
-import de.tud.disteventsys.actor.MainHandler.Messages.{HandlerResponse, RequestTimeout, SecondHandlerResponse}
 import de.tud.disteventsys.esper.EsperEngine
 import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
 
@@ -96,19 +95,10 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
         actors = actors ++ mActors
         println(s"ACTIRS: $actors")
       }
-
-    case HandlerResponse =>
-
-
-    case DeployStream(eventWithFields: Tuple2[String, List[String]]) =>
+/*    case DeployStream(eventWithFields: Tuple2[String, List[String]]) =>
 
       //val handler = context.actorOf(Handler.props(self, actors, 10 seconds), s"handler${rand.nextLong()}")
-      //handlers = handlers :+ handler
-
-
-    /*case DeployStatement(epl, listener) =>
-      println(s"INSIDE DEPLOY STATEMENT: ${listener}")
-      createEPL(epl)(evt => listener map ( l => l ! evt))*/
+      //handlers = handlers :+ handler*/
 
     case StartProcessing                =>
       context.become(dispatchingToEsper)
@@ -264,7 +254,7 @@ class EsperActor extends Actor with ActorLogging with EsperEngine{
   }
 
   import context.dispatcher
-  val timeoutMessage = context.system.scheduler.scheduleOnce(delay){self ! RequestTimeout}
+  //val timeoutMessage = context.system.scheduler.scheduleOnce(delay){self ! RequestTimeout}
 }
 
 

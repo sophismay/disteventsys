@@ -3,8 +3,6 @@ package de.tud.disteventsys.actor
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.Logging
 import de.tud.disteventsys.actor.HelperHandler.Messages._
-import de.tud.disteventsys.actor.MainHandler.Messages.SecondHandlerResponse
-import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
 import scala.concurrent.duration._
 
 /**
@@ -28,27 +26,9 @@ class HelperHandler(originalSender: ActorRef, actors: Map[String, ActorRef], eve
     log.debug("STARTING HELPER HANDLER")
   }
   def receive =  {
-    case EsperEvent(clz, underlying) =>
-      val actor = getActor(underlying)
-      underlying match {
-        case evt@_ =>
-          if(evt.getClass == event.getClass){
-            actor ! EsperEvent(clz, underlying)
-            originalSender ! SecondHandlerResponse
-          }
-      }
     case StartOperation(id, evt) =>
       log.info(s"HELPER HANDLER: Received Start Operation Message, $id $evt")
       doOperation(id, evt, sender())
-  }
-
-  private def getActor(underlying: AnyRef): ActorRef = {
-    def getter(name: String) = { actors.get(name) match { case Some(actor) => actor } }
-    underlying match {
-      case Sell(s, p, a) => getter("seller")
-      case Buy(s, p, a)  => getter("buyer")
-      case Price(s, p)   => getter("pricer")
-    }
   }
 
   private def doOperation(id: Long, evt: AnyRef, sender: ActorRef) = {

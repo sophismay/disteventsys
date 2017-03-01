@@ -1,7 +1,6 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
-import akka.event.LoggingReceive
 
 import scala.concurrent.duration.FiniteDuration
 import akka.event.Logging
@@ -54,6 +53,5 @@ class ScheduleActor extends Actor with ActorLogging{
       }
     }
     timeouts = timeouts + (id -> timeout)
-    // timeout.cancel
   }
 }

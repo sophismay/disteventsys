@@ -2,7 +2,7 @@ package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.event.LoggingReceive
-import de.tud.disteventsys.actor.HelperHandler.Messages.HelperResponse
+import de.tud.disteventsys.actor.HelperHandler.Messages.{HelperResponse, StartOperation}
 import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
 
 import scala.util.Random
@@ -39,31 +39,44 @@ class MainHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event
   private var receivedEventsWithIds: List[Tuple3[Long, Option[AnyRef], Option[_]]] = List.empty
   val rand = new Random()
   val scheduler = context.actorOf(ScheduleActor.props, "scheduler")
+  var eventCount, fulfilledCount, timeoutCount = 0
+  var timeoutsReceived: List[Long] = List.empty
 
   def receive = LoggingReceive {
     case EsperEvent(clz, underlying) =>
       val actor = getActor(underlying)
       println(s"ESPER EVENT IN HANDLEr: $clz $underlying")
-      val long = rand.nextLong()
-      underlying match {
+      eventCount += 1
+      handleIncomingEvent(actor, underlying)
+      /*underlying match {
         case Buy(s, p, a)  =>
-          actor ! Buy(s, p, a)
-          receivedEventsWithIds = receivedEventsWithIds :+ Tuple3(long, Some(underlying), None)
-          scheduler ! StartTimer(long, eventTimeoutDuration)
-          handleFiredEvent(long, Buy(s, p, a))
+          //actor ! Buy(s, p, a)
+          handleIncomingEvent(underlying)
+          //handleFiredEvent(long, Buy(s, p, a))
         case Price(s, p)   =>
           actor ! Price(s, p)
           receivedEventsWithIds = receivedEventsWithIds :+ Tuple3(long, Some(underlying), None)
+          sendToHelperHandler(long, underlying)
           scheduler ! StartTimer(long, eventTimeoutDuration)
-          handleFiredEvent(long, Price(s, p))
+          //handleFiredEvent(long, Price(s, p))
         case Sell(s, p, a) =>
           actor ! Sell(s, p, a)
           receivedEventsWithIds = receivedEventsWithIds :+ Tuple3(long, Some(underlying), None)
+          sendToHelperHandler(long, underlying)
           scheduler ! StartTimer(long, eventTimeoutDuration)
-          handleFiredEvent(long, Sell(s, p, a))
-      }
+          //handleFiredEvent(long, Sell(s, p, a))
+      }*/
     case HelperResponse(id, response) =>
-      handleHelperResponse(id, response)
+      // check if timeout received for event before fulfilling
+      if(!timeoutsReceived.contains(id)){
+        fulfilledCount += 1
+        handleHelperResponse(id, response)
+      }
+    case Timeout(id) =>
+      timeoutsReceived = timeoutsReceived :+ id
+      timeoutCount += 1
+      log.info(s"MAIN HANDLER: Timeout received for $id")
+      handleTimeout(id)
       //collectResponse(id, response)
     /*case HandlerResponse =>
       // add response to resultsFired, then collectResponse
@@ -73,17 +86,39 @@ class MainHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event
       sendResponseAndShutdown(RequestTimeout)
   }
 
-  private def handleFiredEvent(id: Long, evt: AnyRef) = {
+  private def handleIncomingEvent(actor: ActorRef, underlying: AnyRef) = {
+    val long = rand.nextLong()
+    actor ! underlying
+    receivedEventsWithIds = receivedEventsWithIds :+ Tuple3(long, Some(underlying), None)
+    sendToHelperHandler(long, underlying)
+    scheduler ! StartTimer(long, eventTimeoutDuration)
+  }
+
+  private def sendToHelperHandler(id: Long, evt: AnyRef) = {
+    hHandler.map { handler => handler ! StartOperation(id, evt) }
+  }
+  // find event by id and handle error
+  private def handleTimeout(id: Long) = {
+    //val evtWithId = (receivedEventsWithIds find { case (ind, Some(evt), None) => ind == id }).get
+    val evtWithId = receivedEventsWithIds find { case (ind, Some(evt), None) => ind == id }
+    log.info(s"MAIN HANDLER: Timeout for evtWithId, $evtWithId")
+    log.info(s"MAIN HANDLER: events, fulfilled, timeout counts: $eventCount, $fulfilledCount, $timeoutCount")
+    // TODO: remove event from list?
+  }
+ /* private def handleFiredEvent(id: Long, evt: AnyRef) = {
     //eventsFired = eventsFired :+ evt
     // collect response
     //collectResponse
-  }
+  }*/
   // find Tuple3 by id and add response, then collect
   private def handleHelperResponse(id: Long, response: AnyRef) = {
+    // tell schedule handler actor to stop timeout for this id
+    scheduler ! StopTimeout(id)
     val evtWithId = (receivedEventsWithIds map {
       case (ind, undly, None) => if(ind == id) (ind, undly, Some(response))
     }).head
     log.info(s"MAIN HANDLER: Response In: $evtWithId")
+    log.info(s"MAIN HANDLER: events, fulfilled, timeout counts: $eventCount, $fulfilledCount, $timeoutCount")
     removeFulfilledEvents(id)
     // TODO: send response to EsperActor?
   }
@@ -91,6 +126,7 @@ class MainHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event
   // reset receivedEventsWithIds to values excluding fulfilled events
   private def removeFulfilledEvents(id: Long) = {
     receivedEventsWithIds = receivedEventsWithIds filter { case (ind, underly, _) => ind != id }
+    log.info(s"REMOVED Fulfilled event: $id")
   }
 
   private def startTimerForEvent(id: Long) = {

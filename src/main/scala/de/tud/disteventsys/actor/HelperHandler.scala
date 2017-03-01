@@ -5,6 +5,7 @@ import akka.event.Logging
 import de.tud.disteventsys.actor.HelperHandler.Messages._
 import de.tud.disteventsys.actor.MainHandler.Messages.SecondHandlerResponse
 import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
+import scala.concurrent.duration._
 
 /**
   * Created by ms on 07.02.17.
@@ -52,7 +53,8 @@ class HelperHandler(originalSender: ActorRef, actors: Map[String, ActorRef], eve
 
   private def doOperation(id: Long, evt: AnyRef, sender: ActorRef) = {
     // TODO: do some time Consuming task, maybe not
-    val timeout = context.system.scheduler.scheduleOnce(50 millis){
+    import context.dispatcher
+    val timeout = context.system.scheduler.scheduleOnce(80 millis){
       sender ! HelperResponse(id, None)
     }
     // timeout.cancel

@@ -1,6 +1,8 @@
 package de.tud.disteventsys.dsl
 
-import de.tud.disteventsys.actor.ActorCreator
+import akka.actor.ActorSystem
+import de.tud.disteventsys.actor.ParentActor.CreateStatement
+import de.tud.disteventsys.actor.{ActorCreator, ParentActor}
 import de.tud.disteventsys.event.Event._
 import de.tud.disteventsys.dsl.QueryAST.{From, Select}
 import de.tud.disteventsys.esper.{EsperStream, Statement}
@@ -8,7 +10,6 @@ import de.tud.disteventsys.common._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
-
 import scala.concurrent.duration.Duration
 
 
@@ -104,6 +105,8 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
   private var dependentStreams: Array[de.tud.disteventsys.esper.Stream[_]] = Array.empty
   //private val rootNode = node("root")
   private var currentNode: Tree[Any] = rootNode
+  private lazy val system = ActorSystem()
+  val parentActor = system.actorOf(ParentActor.props, "parentactor")
 
   private def treeSize[A](tree: Tree[A]): Int = {
     tree match {
@@ -247,6 +250,12 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
     EsperStream(stream)
   }
 
+  def createQuery = {
+    val parsedStringBuilder = createEpl
+    parentActor ! CreateStatement(parsedStringBuilder, currentNode, false)
+
+    // ESperStream(stream)????
+  }
   def createStream: EsperStream[_] = {
     if(!dependsOnStream) return createStreamFromStatement else return createStreamFromStream
   }

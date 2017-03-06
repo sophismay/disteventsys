@@ -6,6 +6,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, OneForOneStrategy, Props, Rece
 import akka.event.LoggingReceive
 import com.espertech.esper.client.EPStatement
 import de.tud.disteventsys.actor.EsperActor.RegisterEventType
+import de.tud.disteventsys.actor.ParentActor.DispatchedEsperEvent
 import de.tud.disteventsys.esper.{EsperEngine, Statement}
 import de.tud.disteventsys.event.Event.{Buy, EsperEvent, Price, Sell}
 import de.tud.disteventsys.esper.Engine
@@ -98,7 +99,8 @@ class EsperActor(originalSender: ActorRef) extends Actor with ActorLogging {
       }*/
 
     case DeployStatement(eplStatement: String) =>
-
+      println(s"DEploy statement called with $eplStatement")
+      esperEngine.createEPL(eplStatement){evt => self ! evt }
     case StartProcessing                =>
       context.become(dispatchingToEsper)
 
@@ -122,22 +124,6 @@ class EsperActor(originalSender: ActorRef) extends Actor with ActorLogging {
           //eplStatements foreach { s => println(s"Before Executing Statement in None: $s")}
           executeStatements(eplStatements, currentMainHandler)
       }*/
-
-    /*case CreateActor =>
-      println("CREATE ACTOR CALLED------------")*/
-
-    /*case UnregisterAllEvents =>
-      resetEPStatements*/
-      //epService.removeAllStatementStateListeners()
-      //epService.removeAllServiceStateListeners()
-      //epService.getEPAdministrator.stopAllStatements
-      //println(s"BEFORE UNREGISTERING: ${currentEsperStatement.getUpdateListeners}")
-    /*if(!currentEsperStatement.isStopped)
-      currentEsperStatement.removeAllListeners()*/
-
-    /*case evt@_ =>
-      println(s"CASE EVT DISPATCH: ${evt}")
-      epRuntime.sendEvent(evt)*/
 
   }
 
@@ -171,7 +157,7 @@ class EsperActor(originalSender: ActorRef) extends Actor with ActorLogging {
   }
 
   private def dispatchingToEsper(): Receive = {
-    case UnregisterAllEvents =>
+    /*case UnregisterAllEvents =>
       println(s"CASE UNREGISTER ALL EVTS: ${EPStatement}")
 
       /*if(!currentEsperStatement.isStopped)
@@ -180,10 +166,14 @@ class EsperActor(originalSender: ActorRef) extends Actor with ActorLogging {
       context.become(beforeDispatching)
       println("context became")
       //resetEPStatements
-      self ! UnregisterAllEvents
+      self ! UnregisterAllEvents*/
+
+    case EsperEvent(clz, underlying) =>
+      originalSender ! DispatchedEsperEvent(EsperEvent(clz, underlying))
     // TODO: evt@_ somewhat generic and hence Received Buy is logged 12 times when it's above case UnregisterAllEvents
     case evt@_ =>
       println(s"CASE EVT DISPATCH: ${evt}")
+      // send event to epRuntime as well: EsperEvent(clz, underlying)
       esperEngine.epRuntime.sendEvent(evt)
     //case _ =>
   }

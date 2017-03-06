@@ -75,7 +75,7 @@ trait ActorCreator {
         from Price.std:unique(symbol) p
         """*/
     println(s"NAMEOFACTOR ${buyerActor.path.name}")
-    esperActor ! InitializeActors(actors)
+    //esperActor ! InitializeActors(actors)
 
     // DONE
     statement.getAllEvents foreach {
@@ -84,7 +84,7 @@ trait ActorCreator {
         //esperActor ! CreateActor(clz)
     }
     //esperActor ! DeployStatements(eplStatement)
-    esperActor ! DeployStatementsss(Array(eplStatement), statement.getEventsList, None, statement.getResponsibleEvent)
+    //esperActor ! DeployStatementsss(Array(eplStatement), statement.getEventsList, None, statement.getResponsibleEvent)
     // TODO: make statement a trait so that one can not only infer the eplString but also the classes, etc
     //TODO: infer actor(eg. buyer) from statement
     //esperActor ! RegisterEventType("Price", classOf[Price])
@@ -121,10 +121,10 @@ trait ActorCreator {
     // next, include timeout
     println(s"ABOUT TO UNREGISTER EVENTS: ${esperActor.path.getElements}")
     // stop events or unregister?
-    esperActor ! UnregisterAllEvents
+    //esperActor ! UnregisterAllEvents
     println(s"AFTER ABOUT TO UNREGISTER EVENTS")
 
-    esperActor ! InitializeActors(actors)
+    //esperActor ! InitializeActors(actors)
     // add old statements with new ones
     var maps: Map[String, Class[_]] = Map.empty
     oldStatements foreach { os => maps = maps ++ os.getAllEvents}
@@ -145,9 +145,9 @@ trait ActorCreator {
     println(s"EVENTSLIST FLATTEN: ${eventsList}")
     val eventsWithFields = newStream.getEventWithFields
     println(s"BEFORE CALLING DEPLOY STATEMENTSSS 2nd call: $eventsWithFields")
-    esperActor ! DeployStatementsss(oldEplStrings, eventsList, Some(eventsWithFields), oldStatements(0).getResponsibleEvent)
+    //esperActor ! DeployStatementsss(oldEplStrings, eventsList, Some(eventsWithFields), oldStatements(0).getResponsibleEvent)
     //esperActor ! DeployStream(newStream.getEventWithFields)
-    esperActor ! StartProcessing
+    //esperActor ! StartProcessing
 
     // trying above foreach of maps with future to test
     /*val oldNewMapsRegisterFuture: Future[Unit] = Future { maps map {

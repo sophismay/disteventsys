@@ -9,14 +9,8 @@ import de.tud.disteventsys.event.Event._
   */
 class SellerActor extends Actor with ActorLogging{
    def receive: Receive = {
-
-    case EsperEvent(className, underlying) =>
-      println(s"CASE ESPEREVENT ${className}:")
-      underlying match {
-        case _ => println("NOt Handling yet")
-        /*case Sell(s, p, a) =>
-          println(s"Received Sell: ${s}, ${p}, ${a}")*/
-      }
-    case _ => println(s"Could not find a corresponding case class")
+     case Sell(s, p, a) =>
+       println(s"Received Sell: $s, $p, $a")
+     case _ => println(s"Could not find a corresponding case class")
   }
 }

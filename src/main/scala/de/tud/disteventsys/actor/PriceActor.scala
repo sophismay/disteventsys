@@ -11,13 +11,8 @@ class PriceActor extends Actor with ActorLogging{
 
     //TODO: Buy events get here but question is how come...
     //TODO: would be ideal if events go to respective actors
-    case EsperEvent(className, underlying) =>
-      println(s"CASE ESPEREVENT ${className}:")
-      underlying match {
-        case Price(s, p) =>
-          println(s"Received Price Event: ${s}, ${p}")
-        case x: Any => println(s"Something ELSE: $x")
-      }
+    case Price(s, p) =>
+      println(s"Received Price: ${s}, ${p}")
     case _ => println(s"Could not find a corresponding case class")
   }
 }

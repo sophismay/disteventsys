@@ -253,7 +253,7 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
   def createQuery = {
     val parsedStringBuilder = createEpl
     parentActor ! CreateStatement(parsedStringBuilder, currentNode, false)
-
+    resetVariables
     // ESperStream(stream)????
   }
   def createStream: EsperStream[_] = {

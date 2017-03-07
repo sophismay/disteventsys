@@ -5,7 +5,7 @@ import de.tud.disteventsys.actor.{BuyerActor, EsperActor}
 import de.tud.disteventsys.event.Event._
 import de.tud.disteventsys.config.Config
 import de.tud.disteventsys.actor.EsperActor._
-import de.tud.disteventsys.common.{BuyGenerator, FieldsGenerator, PriceGenerator, SellGenerator}
+import de.tud.disteventsys.common._
 import de.tud.disteventsys.dsl.QueryDSL
 
 import scala.collection.immutable.RedBlackTree
@@ -44,10 +44,18 @@ object DisEventSys extends App {
     val price = PriceGenerator()
     val sell = SellGenerator()
     val fields = FieldsGenerator("symbol, price, 100")
+    // for example Price.std:unique(symbol)
+    val priceUniqueField = price.getFields(0)
+    price.setUniqueField(priceUniqueField)
+    //price.copy(uniqueField = priceUniqueField)
 
-    val currentDsl = dsl INSERT buy SELECT fields FROM price
+    import Helpers._
+
+    //val currentDsl = dsl INSERT buy SELECT fields FROM price.copy(uniqueField = priceUniqueField)
+    //price where(_ => "s")
+    val currentDsl = dsl INSERT buy SELECT fields FROM price WHERE { _.equals(5) }
     val queryResult = currentDsl.createQuery
-    println(s"RSLT from createQuery: $queryResult")
+    //println(s"RSLT from createQuery: $queryResult")
     val nextDsl = dsl INSERT sell SELECT fields FROM price
     nextDsl.createQuery
     //val stream1 = currentDsl.createStream

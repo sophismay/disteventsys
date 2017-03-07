@@ -42,13 +42,44 @@ trait Clause extends JavaTokenParsers with ClauseHelper {
     s"insert into ${clz.capitalize}\n"
   }
 
-  def whereClause(expr: Expr): String = {
-    val clause = evaluateExpr(expr)
-    s"where ${clause}\n"
+  def whereClause(clz: String, field: String, extras: Option[Map[String, String]]): String = {
+    val ext = extras.getOrElse(Map.empty)
+    var augmented = ""
+    if(!ext.isEmpty) {
+      // get keys, that is, esper-specific
+      val keys = ext map { _. _1 }
+      keys foreach {
+        k =>
+          if(k == "equals") {
+            augmented = s"= ${ext(k)}"
+          }
+      }
+    }
+    s"where $clz.$field $augmented\n"
+    //val clause = evaluateExpr(expr)
+    //s"where ${clause}\n"
   }
 
-  def fromClause(clz: String): String = {
-    s"from ${clz.capitalize}\n"
+  def fromClause(clz: String, extras: Option[Map[String, String]]): String = {
+    val ext = extras.getOrElse(Map.empty)
+    var augmented = ""
+    if(!ext.isEmpty) {
+      // get keys, that is, esper-specific
+      val keys = ext map { _. _1 }
+      keys foreach {
+        k =>
+          if(k == "unique") {
+            augmented = addUniqueClause(ext(k))
+          }
+      }
+    }
+    println(s"FROM CLAUSE: ${augmented} $ext ${s"from ${clz.capitalize}$augmented\n"}")
+    if(augmented.isEmpty) s"from ${clz.capitalize}\n" else s"from ${clz.capitalize}$augmented\n"
+    //s"from ${clz.capitalize}\n"
+  }
+
+  private def addUniqueClause(field: String): String = {
+    s".std:unique($field)"
   }
 
   def fromStreamClause(stream: EsperStream[_]) = {
@@ -73,7 +104,8 @@ trait Parser[+T] {
           d match {
             case Insert(stream)     => insertClause(stream)
             case Select(fields)     => selectClause(fields)
-            case From(clz)          => fromClause(clz)
+            case From(clz, extras, _)          => fromClause(clz, extras)
+            case Where(clz, field, extras) => whereClause(clz, field, extras)
             //case FromStream(stream) => fromStreamClause(stream)
             case _                  => "" //throw new NotImplementedException()
           }

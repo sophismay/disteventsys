@@ -20,7 +20,8 @@ class Statement {
   def initEpl(eplStringBuilder: StringBuilder) = {
     // populate events from StringBuilder, in order
     eplStatement = eplStringBuilder.mkString
-    eplEvents = eplStatement.split("\n").flatMap(p => p.split(" ")).filter(p => allEvents.contains(p)).toList
+    //eplEvents = eplStatement.split("\n").flatMap(p => p.split(" ")).flatMap(p=>p.split(".")).filter(p => allEvents.contains(p)).toList
+    eplEvents = (allEvents filter { evtStr => eplStatement.contains(evtStr)}).toList
     firstEvent = eplEvents(0)
     println(s"EVENTS IN EPLSTRING: ${eplEvents}")
   }

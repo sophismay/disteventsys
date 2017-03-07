@@ -7,7 +7,7 @@ import scala.util.Random
 /**
   * Created by ms on 02.01.17.
   */
-class Generator[T] {
+class Generator[+T] {
   //self =>
 
   //def getClassName: T
@@ -18,7 +18,27 @@ class Generator[T] {
   def getClassName = "Buy"
 }*/
 case class BuyGenerator(clz: String = "Buy") extends Generator[String]
-case class PriceGenerator(clz: String = "Price") extends Generator[String]
+case class PriceGenerator(clz: String = "Price") extends Generator[String]{
+  var uniqueField = ""
+  var hasEquals: Boolean = false
+  var equals: Int = _
+  var windowLength: Int = _
+  def hasUniqueField: Boolean = !uniqueField.isEmpty
+  def getFields = Array("symbol", "price", "amount")
+  def setUniqueField(uf: String) = uniqueField = uf
+  def getUniqueField = uniqueField
+  def equals(x: Int): Unit = {
+    equals = x
+    hasEquals = true
+  }
+  def getEquals = equals
+  def withUniqueField(uf: String) = {
+    //uniqueField = uf
+  }
+  def withUnique(f: Array[String] => String) = {
+    //uniqueField = f(getFields)
+  }
+}
 case class SellGenerator(clz: String="Sell") extends Generator[String]
 
 case object StreamReferenceGenerator extends Generator[String]{

@@ -76,6 +76,7 @@ class ParentActor extends Actor with ActorLogging {
     createdActors = createdActors + (esperActorName -> Tuple2(esperActor, new Stream(statement, node)))
     println(s"CReated ACtors: ${createdActors.size} $createdActors")
     // register events
+    println(s"ALl events : ${statement.getAllEvents} ${statement.getEplStatement}")
     statement.getAllEvents foreach {
       case (clz, underlyingClass) =>
         esperActor ! RegisterEventType(clz, underlyingClass)

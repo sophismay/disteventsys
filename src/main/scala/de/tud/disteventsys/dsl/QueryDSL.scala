@@ -190,11 +190,12 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
     f(generator)
     println(s"GEN WHERE: ${generator.getEquals}")
     var options: Map[String, String] = Map.empty
+    println(s"GENERATOR has equals: ${generator.hasEquals}")
     if(generator.hasEquals) {
       options = options + ("equals" -> generator.equals.toString)
     }
     val option = if(options.isEmpty) None else Some(options)
-    addToNode(Where("Price", "amount", option))
+    addToNode(Where("Price", "price", option))
     //println(s"AFTER where add: $currentNode")
     self
   }

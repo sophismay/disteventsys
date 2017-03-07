@@ -19,9 +19,37 @@ class Generator[+T] {
 }*/
 case class BuyGenerator(clz: String = "Buy") extends Generator[String]
 case class PriceGenerator(clz: String = "Price") extends Generator[String]{
+  self =>
+  object symbol {
+    implicit class PriceThings(x: PriceGenerator) {
+      object symbol {
+        def :=() = {
+          // refer generator type here and create string
+          // example Price.symbol = BP
+        }
+      }
+    }
+    def :=(s: String) = {
+      self.equals = s
+      hasEquals = true
+      equalTo = s"symbol = $s"
+    }
+  }
+  object amount {
+    def :=(a: Int) = {
+      self.equals = a
+      hasEquals = true
+      equalTo = s"amount = $a"
+    }
+    def >(a: String) = {
+      greaterThan = s"amount > $a"
+    }
+  }
   var uniqueField = ""
+  var equalTo = ""
+  var greaterThan = ""
   var hasEquals: Boolean = false
-  var equals: Int = _
+  var equals: Any = _
   var windowLength: Int = _
   def hasUniqueField: Boolean = !uniqueField.isEmpty
   def getFields = Array("symbol", "price", "amount")

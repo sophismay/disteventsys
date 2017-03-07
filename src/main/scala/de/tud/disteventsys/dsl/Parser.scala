@@ -45,17 +45,21 @@ trait Clause extends JavaTokenParsers with ClauseHelper {
   def whereClause(clz: String, field: String, extras: Option[Map[String, String]]): String = {
     val ext = extras.getOrElse(Map.empty)
     var augmented = ""
+    println(s"WHERE augmented $extras")
     if(!ext.isEmpty) {
       // get keys, that is, esper-specific
-      val keys = ext map { _. _1 }
+      val keys = ext map { _._1 }
       keys foreach {
         k =>
           if(k == "equals") {
             augmented = s"= ${ext(k)}"
           }
       }
+      s"where $clz.$field $augmented\n"
+    } else {
+      s""
     }
-    s"where $clz.$field $augmented\n"
+
     //val clause = evaluateExpr(expr)
     //s"where ${clause}\n"
   }

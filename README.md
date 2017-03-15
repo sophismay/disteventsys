@@ -32,3 +32,4 @@ Import and Run as SBT project
  ```
 ## Future Work ##
 * Extend DSL to incorporate joins
+* Capture failed events based on a timeout, store them on a backlog(storage) and replay when service is idle

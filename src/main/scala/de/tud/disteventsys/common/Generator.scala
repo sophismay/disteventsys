@@ -4,22 +4,76 @@ import de.tud.disteventsys.esper.EsperStream
 
 import scala.util.Random
 
-/**
-  * Created by ms on 02.01.17.
-  */
-class Generator[T] {
-  //self =>
+trait Helpers {
+  self =>
 
-  //def getClassName: T
+  var uniqueField = ""
+  var equalTo = ""
+  var greaterThan = ""
+  var hasEquals: Boolean = false
+  var equals: Any = _
+  var clause = ""
+
+  private def :=(a: String, field: String) = {
+    self.equals = a
+    hasEquals = true
+    //equalTo = s"$field = $a"
+    clause = s"$field = $a"
+  }
+  private def >(a: String, field: String) = {
+    clause = s"$field > $a"
+  }
+
+  object symbol {
+    private val field = "symbol"
+    def :=(a: String) = {
+      self.:=(a, field)
+    }
+  }
+  object amount {
+    private val field = "amount"
+    def :=(a: Int) = {
+      self:=(a.toString, field)
+    }
+    def >(a: String) = {
+      self.>(a, field)
+    }
+  }
+
+  object price {
+    private val field = "price"
+    def :=(a: Int) = {
+      self.:=(a.toString, field)
+      /*self.equals = a
+      hasEquals = true
+      equalTo = s"price = $a"
+      clause = s"price = $a"*/
+    }
+    def >(a: Int) = {
+      self.>(a.toString, field)
+    }
+  }
 }
-//TODO: would be nice to have map or flatmap
 
-/*case object BuyGenerator extends Generator[String]{
-  def getClassName = "Buy"
-}*/
-case class BuyGenerator(clz: String = "Buy") extends Generator[String]
-case class PriceGenerator(clz: String = "Price") extends Generator[String]
-case class SellGenerator(clz: String="Sell") extends Generator[String]
+class Generator[T] {}
+case class BuyGenerator(clz: String = "Buy") extends Generator[String] with Helpers {
+  def getFields = Array("symbol", "price", "amount")
+}
+case class PriceGenerator(clz: String = "Price") extends Generator[String] with Helpers{
+  var windowLength: Int = _
+  def hasUniqueField: Boolean = !uniqueField.isEmpty
+  def getFields = Array("symbol", "price", "amount")
+  def setUniqueField(uf: String) = uniqueField = uf
+  def getUniqueField = uniqueField
+  /*def equals(x: Int): Unit = {
+    equals = x
+    hasEquals = true
+  }*/
+  //def getEquals = equals
+}
+case class SellGenerator(clz: String="Sell") extends Generator[String] with Helpers {
+  def getFields = Array("symbol", "price", "amount")
+}
 
 case object StreamReferenceGenerator extends Generator[String]{
   var ref: String = ""
@@ -31,14 +85,6 @@ case object StreamReferenceGenerator extends Generator[String]{
   }
 }
 
-/*case object PriceGenerator extends Generator[String]{
-  def getClassName = "Price"
-}*/
-
-/*case object SellGenerator extends Generator[String]{
-  def getClassName = "Sell"
-}*/
-
 case class FieldsGenerator(val fields: String) extends Generator[Seq[String]]{
   //def getClassName = ""
   def getFields = {
@@ -49,7 +95,3 @@ case class FieldsGenerator(val fields: String) extends Generator[Seq[String]]{
 case class EsperStreamGenerator(es: EsperStream.type) extends Generator[EsperStream.type]{
 
 }
-
-/*object Generator {
-  def unapply[T](g: Generator[T]): Option[Generator[T]] = Some(g)
-}*/

@@ -23,17 +23,17 @@ object QueryAST {
   // Parent Operator for Esper Stream
   sealed abstract class ParentOperator
   // clz: class to insert into
-  case class INSERT(clz: String) extends ParentOperator
+  //case class INSERT(clz: String) extends ParentOperator
 
   // Operators such as select
   sealed abstract class Operator
   //case class Select(parent: ParentOperator, fields: List[String]) extends Operator
-  case class Select(fields: List[String])                   extends Operator
-  case class Insert(stream: String)                         extends Operator
-  case class From(clz: String)                              extends Operator
-  case class FromStream(es: EsperStream[_])                 extends Operator
+  case class Select(fields: List[String])                                        extends Operator
+  case class Insert(stream: String)                                              extends Operator
+  case class From(clz: String, extras: Option[Map[String, String]], gen: AnyRef) extends Operator
+  case class FromStream(es: EsperStream[_])                                      extends Operator
   //case class From(parent: Operator, clz: String)            extends Operator
-  case class Where(expr: Expr)                              extends Operator
+  case class Where(clz: String, clause: String) extends Operator
 
   // Expressions/ Filters
   abstract sealed class Expr
@@ -60,39 +60,6 @@ object QueryAST {
 
 class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
   self =>
-
-  abstract class HandleParam[A]{
-    def handle(gen: A): Unit
-    def checkLastNodeBeforeAdd(clz: String) = {
-      val lastNode = currentNode.lastNode
-      println(s"LASTNODE: $lastNode")
-      lastNode match {
-        case EmptyTree => throwArgumentError
-        case NonEmptyTree(d, l, r) => if(d.isInstanceOf[Select]) addToNode(From(clz)) else throwArgumentError
-      }
-    }
-  }
-
-  implicit object GeneratorHandleParam extends HandleParam[Generator[String]]{
-    def handle(gen: Generator[String]): Unit = {
-      gen match {
-        case BuyGenerator(clz)    =>
-          checkLastNodeBeforeAdd(clz)
-        case PriceGenerator(clz)  =>
-          checkLastNodeBeforeAdd(clz)
-        case SellGenerator(clz)   =>
-          checkLastNodeBeforeAdd(clz)
-        //case EsperStreamGenerator(es) =>
-        //TODO: actor dependency stuff
-      }
-    }
-  }
-
-  implicit object StreamHandleParam extends HandleParam[EsperStream.type]{
-    def handle(stream: EsperStream.type) = {
-
-    }
-  }
 
   import Tree._
   import QueryAST._
@@ -161,6 +128,47 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
     self
   }
 
+  private def getGenerator = {
+    // get last node and return, that is, the event after FROM
+    val lastNode = currentNode.lastNode
+    val generator = lastNode match {
+      case NonEmptyTree(clauseAST, left, right) =>
+        clauseAST match {
+          case c@From(_, _, _) =>
+            val generator = c.gen
+            println(s"C.GEN : ${c.gen}")
+            generator match {
+              case gen@PriceGenerator(_) =>
+                println(s"ACTUAL GEN: $gen")
+                gen
+            }
+        }
+      //case EmptyTree =>
+    }
+    println(s"LAST NODE FROM WHERE: $lastNode")
+    generator
+  }
+
+  def WHERE(f: PriceGenerator => Unit) = {
+    val generator = getGenerator
+    f(generator)
+    //println(s"GEN WHERE: ${generator.getEquals}")
+    //var options: Map[String, String] = Map.empty
+    println(s"GENERATOR has equals: ${generator.hasEquals}")
+    //if(generator.hasEquals) {
+      //options = options + ("equals" -> generator.equals.toString)
+    //}
+    //val option = if(options.isEmpty) None else Some(options)
+    //addToNode(Where("Price", "price", option))
+    addToNode(Where("Price", generator.clause))
+    //println(s"AFTER where add: $currentNode")
+    self
+  }
+
+  def WHERE(f: SellGenerator => Unit) = {
+
+  }
+
   private def addToNode(o: Operator) = {
     currentNode = currentNode.add(o)
   }
@@ -169,18 +177,17 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
     throw new IllegalArgumentException("From should be preceeded by Select")
   }
 
-  //def FROM[T](gen: Generator[T])(implicit hp: HandleParam[Generator[T]]) = {
   def FROM[T](gen: Any) = {
     //TODO: ensure is preceded by Select
     //TODO: would be nice to use filter or map: currentNode.lastNode.filter
 
     //hp.handle(gen)
-    def checkLastNodeBeforeAdd(clz: String) = {
+    def checkLastNodeBeforeAdd(clz: String, extras: Option[Map[String, String]], gen: AnyRef) = {
       val lastNode = currentNode.lastNode
       println(s"LASTNODE: $lastNode")
       lastNode match {
         case EmptyTree => throwArgumentError
-        case NonEmptyTree(d, l, r) => if(d.isInstanceOf[Select]) addToNode(From(clz)) else throwArgumentError
+        case NonEmptyTree(d, l, r) => if(d.isInstanceOf[Select]) addToNode(From(clz, extras, gen)) else throwArgumentError
       }
     }
 
@@ -198,14 +205,19 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
     if(gen.isInstanceOf[Generator[String]]){
       println(s"IS INSTANCE OF: $gen")
       gen match {
-        case BuyGenerator(clz)    =>
-          checkLastNodeBeforeAdd(clz)
-        case PriceGenerator(clz)  =>
-          checkLastNodeBeforeAdd(clz)
-        case SellGenerator(clz)   =>
-          checkLastNodeBeforeAdd(clz)
+        case bg@BuyGenerator(clz)    =>
+          checkLastNodeBeforeAdd(clz, None, bg)
+        case pg@PriceGenerator(clz)  =>
+          if(pg.hasUniqueField) {
+            //println(s"PG has Unique field: ${pg.getUniqueField}")
+            checkLastNodeBeforeAdd(clz, Some(Map("unique" -> pg.getUniqueField)), pg)
+          } else {
+            checkLastNodeBeforeAdd(clz, None, pg)
+          }
+
+        case sg@SellGenerator(clz)   =>
+          checkLastNodeBeforeAdd(clz, None, sg)
         case EsperStreamGenerator(es) =>
-        //TODO: actor dependency stuff
       }
     }
     if(gen.isInstanceOf[EsperStream[_]]){

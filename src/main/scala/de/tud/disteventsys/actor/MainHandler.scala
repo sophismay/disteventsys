@@ -20,13 +20,12 @@ object MainHandler{
   }
 }
 
+// Handle when events fire from Esper Engine
 class MainHandler(originalSender: ActorRef, actors: Map[String, ActorRef], eventsList: List[String],
                   hHandler: Option[ActorRef], actionEvent: String,
                   eventTimeoutDuration: FiniteDuration) extends Actor with ActorLogging {
 
   private final val eventsCount = eventsList.length
-  //private var eventsFired: Array[_] = Array.empty
-  //private var receivedEvents: List[Option[ActorRef]] = List.empty
   private var receivedEventsWithIds: List[Tuple3[Long, Option[AnyRef], Option[_]]] = List.empty
   val rand = new Random()
   val scheduler = context.actorOf(ScheduleActor.props, "scheduler")
@@ -65,7 +64,6 @@ class MainHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event
   }
   // find event by id and handle error
   private def handleTimeout(id: Long) = {
-    //val evtWithId = (receivedEventsWithIds find { case (ind, Some(evt), None) => ind == id }).get
     val evtWithId = receivedEventsWithIds find { case (ind, Some(evt), None) => ind == id }
     log.info(s"MAIN HANDLER: Timeout for evtWithId, $evtWithId")
     log.info(s"MAIN HANDLER: events, fulfilled, timeout counts: $eventCount, $fulfilledCount, $timeoutCount")
@@ -82,7 +80,6 @@ class MainHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event
     log.info(s"MAIN HANDLER: Response In: $evtWithId")
     log.info(s"MAIN HANDLER: events, fulfilled, timeout counts: $eventCount, $fulfilledCount, $timeoutCount")
     removeFulfilledEvents(id)
-    // TODO: send response to EsperActor?
   }
 
   // reset receivedEventsWithIds to values excluding fulfilled events
@@ -91,6 +88,7 @@ class MainHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event
     log.info(s"REMOVED Fulfilled event: $id")
   }
 
+  // get actor by name from underlying event type
   private def getActor(underlying: AnyRef): ActorRef = {
     def getter(name: String) = { actors.get(name) match { case Some(actor) => actor } }
     underlying match {
@@ -99,7 +97,4 @@ class MainHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event
       case Price(s, p)   => getter("pricer")
     }
   }
-
-  //import context.dispatcher
-  //val timeoutMessage = context.system.scheduler.scheduleOnce(delay){self ! RequestTimeout}
 }

@@ -19,6 +19,8 @@ object HelperHandler {
   }
 }
 
+// Handle the situation when a stream depends on another
+// under time conditions
 class HelperHandler(originalSender: ActorRef, actors: Map[String, ActorRef], event: AnyRef) extends Actor with ActorLogging{
   override val log = Logging(context.system, this)
   override def preStart = {
@@ -32,8 +34,9 @@ class HelperHandler(originalSender: ActorRef, actors: Map[String, ActorRef], eve
   }
 
   private def doOperation(id: Long, evt: AnyRef, sender: ActorRef) = {
-    // TODO: do some time Consuming task, maybe not
     import context.dispatcher
+    // might be a more time consuming task
+    // current time after which event fired from helper handler is considered delayed is set to 100 millis
     val timeout = context.system.scheduler.scheduleOnce(80 millis){
       sender ! HelperResponse(id, None)
     }

@@ -1,7 +1,6 @@
 package de.tud.disteventsys.actor
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Cancellable, Props}
-
 import scala.concurrent.duration.FiniteDuration
 import akka.event.Logging
 
@@ -19,6 +18,9 @@ object ScheduleActor {
   def props: Props = Props(new ScheduleActor)
 }
 
+/*
+  Actor that sets timer and sends messages if time reached
+ */
 class ScheduleActor extends Actor with ActorLogging{
   import ScheduleActor.Messages._
 

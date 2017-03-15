@@ -6,6 +6,7 @@ import de.tud.disteventsys.event.Event.{ Buy, EsperEvent }
 /**
   * Created by ms on 23.11.16.
   */
+// Actor that gets forwarded fired Buy Events
 class BuyerActor extends Actor with ActorLogging {
   def receive: Receive = {
 

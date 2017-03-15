@@ -14,7 +14,7 @@ val fields = FieldsGenerator("symbol, price, 100")
 val query1 = dsl INSERT buy SELECT fields FROM price WHERE { pg: PriceGenerator => pg.price := 5 }
 val stream1 = query1.createStream
 
-*// create a query based on an existing query* 
+_//create a query based on an existing query_
 val query2 = dsl INSERT buy SELECT fields FROM stream1
 query2.createStream
 

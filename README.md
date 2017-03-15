@@ -17,6 +17,7 @@ val query1 = dsl INSERT buy SELECT fields FROM price WHERE { pg: PriceGenerator 
 val stream1 = query1.createStream
 
 //create a query based on an existing query
+// meaning when query1 events are fired, query2 will follow
 val query2 = dsl INSERT buy SELECT fields FROM stream1
 query2.createStream
 

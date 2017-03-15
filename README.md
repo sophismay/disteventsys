@@ -30,7 +30,6 @@ Import and Run as SBT project
      ```<scala>
      val query = dsl INSERT buy SELECT fields FROM price WHERE { g: SellGenerator => g.amount > 50 }
      query.createStream
- 
      ```
 ## Future Work ##
 * Extend DSL to incorporate joins

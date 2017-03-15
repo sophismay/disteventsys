@@ -24,7 +24,7 @@ object QueryAST {
   // Parent Operator for Esper Stream
   sealed abstract class ParentOperator
   // clz: class to insert into
-  case class INSERT(clz: String) extends ParentOperator
+  //case class INSERT(clz: String) extends ParentOperator
 
   // Operators such as select
   sealed abstract class Operator
@@ -180,11 +180,13 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
                 gen
             }
         }
+      //case EmptyTree =>
     }
     println(s"LAST NODE FROM WHERE: $lastNode")
     generator
   }
   // WHERE[U <: Generator[String]](f: U => String)
+  //def WHERE(f: Any => Unit) = {}
   def WHERE[U <: Generator[String]](f: PriceGenerator => Unit) = {
     val generator = getGenerator
     f(generator)
@@ -198,6 +200,9 @@ class QueryDSL extends Parser[Tree[Any]] with ActorCreator {
     addToNode(Where("Price", "price", option))
     //println(s"AFTER where add: $currentNode")
     self
+  }
+  def WHERE(f: Generator[String] => Unit) = {
+
   }
 
   /*def WHERE(implicit f: SellGenerator => String) = {

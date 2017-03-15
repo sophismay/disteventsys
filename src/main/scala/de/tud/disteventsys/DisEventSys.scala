@@ -54,7 +54,7 @@ object DisEventSys extends App {
     //val currentDsl = dsl INSERT buy SELECT fields FROM price.copy(uniqueField = priceUniqueField)
     //price where(_ => "s")
     //val currentDsl = dsl INSERT buy SELECT fields FROM price WHERE { _.symbol.equals(5) }
-    val currentDsl = dsl INSERT buy SELECT fields FROM price WHERE { _.equals(5) }
+    val currentDsl = dsl INSERT buy SELECT fields FROM price WHERE { pg: PriceGenerator => pg.equals(5) }
     val queryResult = currentDsl.createQuery
     //println(s"RSLT from createQuery: $queryResult")
     val nextDsl = dsl INSERT sell SELECT fields FROM price

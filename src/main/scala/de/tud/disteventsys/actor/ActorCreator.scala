@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 
 import scala.concurrent.{Await, Future}
 import de.tud.disteventsys.actor.EsperActor._
-import de.tud.disteventsys.actor.BuyerActor
+//import de.tud.disteventsys.actor.BuyerActor
 import de.tud.disteventsys.dsl.Tree
 import de.tud.disteventsys.esper.Statement
 import de.tud.disteventsys.event.Event._

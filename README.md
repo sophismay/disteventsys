@@ -27,7 +27,7 @@ Import and Run as SBT project
 
 ## Features ##
 * Esper Correlation Engine for Event Processing
-* Actors handling fired Events
+* Akka actors handling fired Events
 * SQL-like DSL 
 ```<scala>
  val query = dsl INSERT buy SELECT fields FROM price WHERE { g: SellGenerator => g.amount > 50 }

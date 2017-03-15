@@ -7,12 +7,9 @@ package de.tud.disteventsys.esper
 
 import com.espertech.esper.client._
 import de.tud.disteventsys.event.Event.EsperEvent
-
 import scala.util.{Failure, Success, Try}
 
-
-
-
+// Setup configuration Service and Runtime for Esper
 trait EsperEngine {
   val esperConfig = new Configuration()
 

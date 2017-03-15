@@ -4,6 +4,7 @@ import de.tud.disteventsys.esper.EsperStream
 
 import scala.util.Random
 
+// where clauses helper
 trait Helpers {
   self =>
 
@@ -44,10 +45,6 @@ trait Helpers {
     private val field = "price"
     def :=(a: Int) = {
       self.:=(a.toString, field)
-      /*self.equals = a
-      hasEquals = true
-      equalTo = s"price = $a"
-      clause = s"price = $a"*/
     }
     def >(a: Int) = {
       self.>(a.toString, field)
@@ -55,7 +52,10 @@ trait Helpers {
   }
 }
 
+// class to Generate Events in a type-safe way
+// create also "where" clauses and also obtain existing fields for each Event
 class Generator[T] {}
+
 case class BuyGenerator(clz: String = "Buy") extends Generator[String] with Helpers {
   def getFields = Array("symbol", "price", "amount")
 }
@@ -65,33 +65,14 @@ case class PriceGenerator(clz: String = "Price") extends Generator[String] with 
   def getFields = Array("symbol", "price", "amount")
   def setUniqueField(uf: String) = uniqueField = uf
   def getUniqueField = uniqueField
-  /*def equals(x: Int): Unit = {
-    equals = x
-    hasEquals = true
-  }*/
-  //def getEquals = equals
 }
 case class SellGenerator(clz: String="Sell") extends Generator[String] with Helpers {
   def getFields = Array("symbol", "price", "amount")
 }
 
-case object StreamReferenceGenerator extends Generator[String]{
-  var ref: String = ""
-  def generateReference = {
-    val rand = new Random()
-    ref += rand.nextLong()
-    println(s"STREAM REFERENCE: $ref")
-    ref
-  }
-}
-
 case class FieldsGenerator(val fields: String) extends Generator[Seq[String]]{
-  //def getClassName = ""
   def getFields = {
     fields.split(",").map{ f => f.trim }.toList
   }
 }
-
-case class EsperStreamGenerator(es: EsperStream.type) extends Generator[EsperStream.type]{
-
-}
+case class EsperStreamGenerator(es: EsperStream.type) extends Generator[EsperStream.type]{}

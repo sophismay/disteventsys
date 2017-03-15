@@ -9,7 +9,9 @@ import scala.concurrent.duration._
 /**
   * Created by ms on 31.01.17.
   */
-
+// Stream class represents the return value of creating a stream from a query
+// contains the tree representing the query and also the Statement class
+// which also encapsulates the Esper Epl String
 class Stream[T](val statement: Statement, node: Tree[T]){
   def getStatement = statement
   def getTree = node
@@ -32,10 +34,6 @@ class Stream[T](val statement: Statement, node: Tree[T]){
       case EmptyTree => ("", List.empty)
     }
   }
-  /*def events(f: Iterable[String] => Boolean, timeout: FiniteDuration = 1 second):  = {
-
-    if(f(getAllEvents.keys))
-  }*/
 }
 
 object Stream{

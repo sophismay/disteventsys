@@ -5,6 +5,8 @@ import de.tud.disteventsys.event.Event.{Buy, Price, Sell}
 /**
   * Created by ms on 02.01.17.
   */
+// Represents the epl String and methods to obtain information from the epl string
+// such as events in the string
 class Statement {
   var eplStatement: String = ""
   var eplEvents: List[String] = List.empty
@@ -16,21 +18,14 @@ class Statement {
     "Sell" -> classOf[Sell]
   )
   private val allEvents = List("Buy", "Sell", "Price")
-  //TODO: infer Responsible event/class from StringBuilder
   def initEpl(eplStringBuilder: StringBuilder) = {
     // populate events from StringBuilder, in order
     eplStatement = eplStringBuilder.mkString
     eplEvents = (allEvents filter { evtStr => eplStatement.contains(evtStr)}).toList
     firstEvent = eplEvents(0)
-    println(s"EVENTS IN EPLSTRING: ${eplEvents}")
   }
 
-  // a query from Stream basically only needs to have the Event it writes to
-  // together with the data (fields)
-  def getFirstEventWithFields = {
-    //(firstEvent, )
-  }
-
+  // get a map of all events in the epl statement string
   def getAllEvents: Map[String, Class[_]] = {
     classMappings filterKeys { clz => eplEvents.contains(clz) }
   }

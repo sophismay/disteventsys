@@ -38,11 +38,6 @@ trait Clause extends ClauseHelper {
     s"insert into ${clz.capitalize}\n"
   }
 
-  /*def whereClause(expr: Expr): String = {
-    val clause = evaluateExpr(expr)
-    s"where ${clause}\n"
-  }*/
-
   def fromClause(clz: String, extras: Option[Map[String, String]]): String = {
     val ext = extras.getOrElse(Map.empty)
     var augmented = ""
@@ -57,9 +52,8 @@ trait Clause extends ClauseHelper {
       }
     }
 
-    println(s"FROM CLAUSE: ${augmented} $ext ${s"from ${clz.capitalize}$augmented\n"}")
+    //println(s"FROM CLAUSE: ${augmented} $ext ${s"from ${clz.capitalize}$augmented\n"}")
     if(augmented.isEmpty) s"from ${clz.capitalize}\n" else s"from ${clz.capitalize}$augmented\n"
-    //s"from ${clz.capitalize}\n"
   }
 
   def whereClause(clz: String, clause: String): String = {
@@ -71,6 +65,7 @@ trait Clause extends ClauseHelper {
   }
 }
 
+// Parser to parse tree
 trait Parser[+T] {
 
   def parse[A >: T](tree: Tree[A]) = Grammar.parseAll(tree)

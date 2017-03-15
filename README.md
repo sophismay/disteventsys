@@ -6,6 +6,8 @@ A Distributed Event System for complex event processing with an SQL-like DSL for
 ## Usage Example ##
 ```<scala>
 val dsl = QueryDSL()
+
+// access event generators safely
 val buy = BuyGenerator()
 val price = PriceGenerator()
 val sell = SellGenerator()

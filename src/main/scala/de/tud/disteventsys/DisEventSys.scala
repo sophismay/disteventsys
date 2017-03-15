@@ -23,7 +23,6 @@ object DisEventSys extends App {
     val stream5 = query4.createStream
     println(s"STREAM RETURNED: ${stream5.statement}")
     // now create stream from existing stream
-    // stream1/dsl INSERT buy SELEcT fields FrOM stream1.events(f: Tuple => Boolean, timeout)
     val nextDsl =  dsl INSERT sell SELECT fields FROM stream1
     val stream4 = nextDsl.createStream
     println(s"STREAM 2: ${stream4}")

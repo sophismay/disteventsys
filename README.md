@@ -14,7 +14,9 @@ val fields = FieldsGenerator("symbol, price, 100")
 val query1 = dsl INSERT buy SELECT fields FROM price WHERE { pg: PriceGenerator => pg.price := 5 }
 val stream1 = query1.createStream
 
-*//* 
+*// create a query based on an existing query* 
+val query2 = dsl INSERT buy SELECT fields FROM stream1
+query2.createStream
 
 ```
 ## Getting Started ##
@@ -25,11 +27,10 @@ Import and Run as SBT project
 * Actors handling fired Events
 * SQL-like DSL 
 
-     ```
-     
+     ```<scala>
      val query = dsl INSERT buy SELECT fields FROM price WHERE { g: SellGenerator => g.amount > 50 }
      query.createStream
-     
+ 
      ```
 ## Future Work ##
 * Extend DSL to incorporate joins

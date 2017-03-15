@@ -1,9 +1,9 @@
-# disteventsys
+# disteventsys #
 
-## Synopsis
+## Synopsis ##
 A Distributed Event System for complex event processing with an SQL-like DSL for querying events. Tech used are Akka and Esper Correlation Engine.
 
-## Usage Examples
+## Usage Example ##
 ```<scala>
 val dsl = QueryDSL()
 val buy = BuyGenerator()
@@ -14,8 +14,22 @@ val fields = FieldsGenerator("symbol, price, 100")
 val query1 = dsl INSERT buy SELECT fields FROM price WHERE { pg: PriceGenerator => pg.price := 5 }
 val stream1 = query1.createStream
 
+*//* 
+
 ```
-## Running
+## Getting Started ##
 Import and Run as SBT project
 
-## Future Work
+## Features ##
+* Esper Correlation Engine for Event Processing
+* Actors handling fired Events
+* SQL-like DSL 
+
+     ```
+     
+     val query = dsl INSERT buy SELECT fields FROM price WHERE { g: SellGenerator => g.amount > 50 }
+     query.createStream
+     
+     ```
+## Future Work ##
+* Extend DSL to incorporate joins

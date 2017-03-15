@@ -14,7 +14,7 @@ val fields = FieldsGenerator("symbol, price, 100")
 val query1 = dsl INSERT buy SELECT fields FROM price WHERE { pg: PriceGenerator => pg.price := 5 }
 val stream1 = query1.createStream
 
-_//create a query based on an existing query_
+//create a query based on an existing query
 val query2 = dsl INSERT buy SELECT fields FROM stream1
 query2.createStream
 
@@ -31,5 +31,5 @@ Import and Run as SBT project
  query.createStream
  ```
 ## Future Work ##
-* Extend DSL to incorporate joins
+* Extend DSL to incorporate joins and windows
 * Capture failed events based on a timeout, store them on a backlog(storage) and replay when service is idle

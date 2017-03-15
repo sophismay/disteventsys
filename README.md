@@ -1,7 +1,7 @@
 # disteventsys #
 
 ## Synopsis ##
-A Distributed Event System for complex event processing with an SQL-like DSL for querying events. Tech used are Akka and Esper Correlation Engine.
+An event system for complex event processing with an SQL-like DSL for querying events. Tech used are Akka and Esper Correlation Engine.
 
 ## Usage Example ##
 ```<scala>
